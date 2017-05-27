@@ -37,6 +37,7 @@ Create a racket file somewhere for your program.  Here is a minimal example.
 ## Assembler Syntax
 I tried to keep as close to normal 6502 asm as possible, however since this extends racket, I had to make some compromises.
 
+* `*=` instructs the assmebler to move to and assemble from the memory location provided
 * You can use $ and % for hex and binary literals.  These work anywhere, not just inside {  } blocks.
 * `@` is used for immediate addressing mode. The traditional `lda #42` is written as `lda @42`
 * Indexed addressing modes are the same, but without a comma.  `sta $0400,x` becomes `sta $0400 x`
