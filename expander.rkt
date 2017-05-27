@@ -151,21 +151,21 @@
 
     ;ROL
     [(list 'rol 'zp   (8bit x) )(list #x26 x)]
-    [(list 'rol 'a               )(list #x2A)]
+    [(list 'rol 'i    #f       )(list #x2A)]
     [(list 'rol 'abs  (16bit x) )(list #x2E x)]
     [(list 'rol 'zpx  (8bit x) )(list #x36 x)]
     [(list 'rol 'absx (16bit x) )(list #x3E x)]
 
     ;LSR
     [(list 'lsr 'zp   (8bit x) )(list #x46 x)]
-    [(list 'lsr 'a              )(list #x4A)]
+    [(list 'lsr 'i    #f       )(list #x4A)]
     [(list 'lsr 'abs  (16bit x) )(list #x4E x)]
     [(list 'lsr 'zpx  (8bit x) )(list #x56 x)]
     [(list 'lsr 'absx (16bit x) )(list #x5E x)]
 
     ;ROR
     [(list 'ror 'zp   (8bit x) )(list #x66 x)]
-    [(list 'ror 'a              )(list #x6A)]
+    [(list 'ror 'i    #f        )(list #x6A)]
     [(list 'ror 'abs  (16bit x) )(list #x6E x)]
     [(list 'ror 'zpx  (8bit x) )(list #x76 x)]
     [(list 'ror 'absx (16bit x) )(list #x7E x)]
