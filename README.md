@@ -2,10 +2,10 @@
 
 Asi64 is a full 6502 assembler, primarily aimed at programming the Commodore 64.
 
-Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  Asi64 takes a very differnt approach, and instead extends the Racket language to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all acessible.
+Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  Asi64 takes a very differnt approach, and instead extends the Racket language to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
 
 ## Disclaimer
-This is a tool written primarily for my own emjoyment and eduation.  At the moment, it is not very user-friendly. Consider this an pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, ![please let me know!](https://twitter.com/pezi_pink)
+This is a tool written primarily for my own emjoyment and eduation.  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
 
 ## Getting Started
 You can find Asi64 on Racket's package manager. `raco install Asi64` should get you setup and ready to go.
@@ -28,7 +28,7 @@ Create a racket file somewhere for your program.  Here is a minimal example.
 
  Asi64 is not a full `#lang` just yet.  Since it extends racket, the first line redirects the normal Racket reader to use Asi64's instead.  The actual assembler and macro expander layer is also required if you want anything interesting to happen.
 
- Asi64 supports various emulator features.  Currently, it is targetted at WinVice (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In this program, we tell the assembler to create a file called c64.prg, and pass the location of the emulator.
+ Asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
 
  The 6502 program itself is expected to be in a single `C64` form.  Anything between `{ ... } ` will be seen as 6502 assembler - more on the full syntax and features in just a moment.
 
@@ -46,7 +46,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 ### Labels
 In Asi64, a label name must start with `:`.  Labels can currently appear on their own line, or before an opcode.
 
-When using a label as a target, the suffix determines how it is resolved.  `+` and `-` will jump to the closest label with that name forwards or backwards from the current location in memory.  This allows you to have many labels with the same name.  Otherwise, you must specify `:` as a suffix.
+When using a label as a target, the suffix determines how it is resolved.  `+` and `-` will jump to the closest label with that name in front or behind the current location in memory.  This allows you to have many labels with the same name.  Otherwise, you must specify `:` as a suffix.
 
 ### More Labels
 
@@ -60,7 +60,7 @@ A common assembler feature is to load a label location as an immediate value, fo
 
 :int ; interrupt handler here    
 ```
-Finally, a macro `label-loc` will return the 16bit value of the label directly (following the suffic rules) so that you can use it as part of an expression.  For example
+Finally, a macro `label-loc` will return the 16bit value of the label directly (following the suffix rules) so that you can use it as part of an expression.  For example
 
 ```racket
 :a  lda @0
@@ -94,7 +94,7 @@ Even inside `{ }` blocks, you still have all of racket.  As long as the code end
 		(let ([address (+ $0400 i)])
 			{sta address}))
 })
-
+```
 
 ### Functions
 You can define and call racket functions that yield assembly code.
@@ -109,6 +109,7 @@ You can define and call racket functions that yield assembly code.
 	*=$1000
 	(mov 42 $d021)
 })
+```
 
 ### Pseudo-ops (Experimental!)
 
