@@ -311,7 +311,7 @@
    'sw_shownormal))
     
 (define (update-min v)
-  (cond [(< v (context-minl prog)) (begin (printf "setting min to ~a\n" v) (set-context-minl! prog v))]))
+  (cond [(< v (context-minl prog)) (set-context-minl! prog v)]))
 
 (define (update-max v)
   (cond [(> v (context-maxl prog)) (set-context-maxl! prog v)]))
@@ -351,9 +351,9 @@
   (vector-set! (context-data prog) (context-location prog) v))
 
 (define (try-set-jump-source expr)
-;  (wdb "in try set jump source with ~a" expr)
+  (wdb "in try set jump source with ~a" expr)
   (cond [(symbol? expr)
-;         (wdb "setting jump source ~a" expr)
+         (wdb "setting jump source ~a" expr)
          (set-jump-source-current (symbol->string expr))]))
 
 (define (write-transition-target branch? expr func)
@@ -398,14 +398,10 @@
            (set-current-value expr)
            (inc-location)
            
-           (update-min-max (context-location prog)))]
-         [else (writeln (format "wtf ~a" expr))
-
-         ]))
+           (update-min-max (context-location prog)))]))
 
 (define (write-values exprs)
   (for ([e (flatten exprs)])
-  ;  (writeln (format "matching ~a" e))
     (match e
       [(transition 'branch label)
        (if (number? label)
@@ -637,8 +633,7 @@
           (λ (k dest)
             (for [(current-target dest)]
               (let ([actual
-                     (find-closest-label
-                      
+                     (find-closest-label                      
                       k
                       (target-label-location current-target)
                       (target-label-relative current-target))])
