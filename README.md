@@ -8,7 +8,7 @@ Traditional assemblers provide various scripting and macro facilities to ease th
 This is a tool written primarily for my own emjoyment and eduation.  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
 
 ## Getting Started
-You can find Asi64 on Racket's package manager. `raco install Asi64` should get you setup and ready to go.
+You can find Asi64 on Racket's package manager. `raco pkg install Asi64` should get you setup and ready to go.
 Create a racket file somewhere for your program.  Here is a minimal example.
  
  ```racket
