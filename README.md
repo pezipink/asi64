@@ -83,7 +83,7 @@ Even inside `{ }` blocks, you still have all of racket.  As long as the code end
 })
 ```
 
-6502 blocks can also be nested inside of each other, enabling you mix arbitary racket and 6502 forms wherever you like in the manner you would expect.
+6502 blocks can also be nested inside of each other, enabling you to mix arbitary racket and 6502 forms wherever you like in the manner you would expect.
 
 ```racket
 (C64 {
@@ -91,8 +91,8 @@ Even inside `{ }` blocks, you still have all of racket.  As long as the code end
 	lda @$20
 	;unroll some code to clear a bit of the video memory
 	(for ([i (in-range 0 10)])
-		(let ([address (+ $0400 i)])
-			{sta address}))
+	  (let ([address (+ $0400 i)])
+	    {sta address}))
 })
 ```
 
