@@ -113,7 +113,7 @@ You can define and call racket functions that yield assembly code.
 
 ### Pseudo-ops (Experimental!)
 
-In the previous example, the function `mov` determines the immediate addressing mode itself, since ultimately it is part of the opcode rather than the operand.  This greatly reduces the reusablity of the code since you'd have to have another `move` to move from a location in memory.  The macro `(define-op ex)` will re-write your function so that the addressing mode is determined at the call site.
+In the previous example, the function `mov` determines the immediate addressing mode itself, since ultimately it is part of the opcode rather than the operand.  This greatly reduces the reusablity of the code since you'd have to have another `mov` to move from a location in memory.  The macro `(define-op ex)` will re-write your function so that the addressing mode is determined at the call site.
 
 ```racket
 (define-op (mov src dst)) {
@@ -130,16 +130,10 @@ In the previous example, the function `mov` determines the immediate addressing 
 ```
 The macro also introduces a few values for you to use that give metadata about the parameters.  Currently you can use
 
-* param-name-16bit?  This will be true if the operand is a 16 bit immediate value or memory address
-* param-name-immedaite?  True if the parameter is immediate.
+* param-name-16bit?  This will be true if the operand is a 16 bit immediate value or 16-bit memory address
+* param-name-immediate?  True if the parameter is immediate.
 
 These let you do some cool things such as writing general operations that are intelligent about their operands.  Example:
-
-```racket
-(define-op (mov src dst)) {
-    lda src
-	lda dst
-})
 
 ```racket
 ;;; adds to a 16 bit number, little-endian fashion.
@@ -172,7 +166,7 @@ Pseudo-ops can also be nested in one another (this seems to mostly work, no gura
 
 ### Emulator support
 
-Currently only Vice is supported.  The labels you define are passed to the emulator so you will see them in the monitor's disassembly.  There is also a special `break` instruction which will enable that location as a breakpoint in the emulator, so greatly simplify your debugging experience.
+Currently only Vice is supported.  The labels you define are passed to the emulator so you will see them in the monitor's disassembly.  There is also a special `break` instruction which will enable that location as a breakpoint in the emulator, greatly simplifying your debugging experience.
 
 ```racket
 
@@ -190,7 +184,7 @@ Currently only Vice is supported.  The labels you define are passed to the emula
 
 ```
 
-### DATA
+### Data
 
 Commonly you need to generate tables of data.  For this, there is a (very simple indeed) `data` macro, which will let you write some expression to generate a bunch of numbers at the current location, which you can of course label.
 
@@ -206,10 +200,15 @@ Commonly you need to generate tables of data.  For this, there is a (very simple
 :mystuff   
 	(data %10000000 $FF (for ([i (in-range 1 10)]) i))
 })
-
+```
 
 ### Programming the assembler internals
 
 Full access to the assembler itself is exposed allowing you to insepct and modify it at will
 
 TODO
+
+### Helper Library
+TODO:
+
+There will be helper library defining a bunch of common C64 routines and constants.
