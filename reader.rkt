@@ -1,3 +1,6 @@
+;Asi64
+;Copyright Ross McKinlay, 2017
+
 #lang racket
 
 (require syntax/readerr)
