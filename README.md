@@ -2,7 +2,7 @@
 
 Asi64 is a full 6502 assembler, primarily aimed at programming the Commodore 64.
 
-Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  Asi64 takes a very differnt approach, and instead extends the Racket language to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
+Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  Asi64 takes a very differnt approach, and instead extends the [Racket language](https://racket-lang.org/) to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
 
 ## Disclaimer
 This is a tool written primarily for my own emjoyment and eduation.  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
