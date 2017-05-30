@@ -11,7 +11,7 @@ This is a tool written primarily for my own enjoyment and education (learning 65
 You can find Asi64 on Racket's package manager. `raco pkg install Asi64` should get you setup and ready to go.
 Create a racket file somewhere for your program.  Here is a minimal example.
  
- ```racket
+ ```asm
 #lang reader (lib "Asi64")
 (require (lib "Asi64/expander.rkt"))
 
@@ -53,7 +53,7 @@ When using a label as a target, the suffix determines how it is resolved.  `+` a
 
 A common assembler feature is to load a label location as an immediate value, for setting interrupt routines, self modifiyng code and the like.  You can extract the low and high bytes from a label using < and > as you can in most assemblers.
 
-```racket
+```asm
     lda @<int:    ; low part of address of interrupt handler code
     ldx @>int:    ; high part of address of interrupt handler code   
     sta $0314    ; store in interrupt vector
@@ -63,7 +63,7 @@ A common assembler feature is to load a label location as an immediate value, fo
 ```
 Finally, a macro `label-loc` will return the 16bit value of the label directly (following the suffix rules) so that you can use it as part of an expression.  For example
 
-```racket
+```asm
 :a  lda @0
     sta $d021
     inc (+ (label-loc a-) 1) ;self modifing code
@@ -73,7 +73,7 @@ Finally, a macro `label-loc` will return the 16bit value of the label directly (
 ### Expressions
 Even inside `{ }` blocks, you still have all of racket.  As long as the code ends up being something the assembler expects, you can write whatever you like.
 
-```racket
+```asm
 (C64 {
 	*=$1000
 	(define x $42)	
@@ -86,7 +86,7 @@ Even inside `{ }` blocks, you still have all of racket.  As long as the code end
 
 6502 blocks can also be nested inside of each other, enabling you to mix arbitary racket and 6502 forms wherever you like in the manner you would expect.
 
-```racket
+```asm
 (C64 {
 	*=$1000
 	lda @$20
@@ -100,7 +100,7 @@ Even inside `{ }` blocks, you still have all of racket.  As long as the code end
 ### Functions
 You can define and call racket functions that yield assembly code.
 
-```racket
+```asm
 (define (mov src dst)	{   
 	lda @src
 	sta dst
@@ -116,7 +116,7 @@ You can define and call racket functions that yield assembly code.
 
 In the previous example, the function `mov` determines the immediate addressing mode itself, since ultimately it is part of the opcode rather than the operand.  This greatly reduces the reusablity of the code since you'd have to have another `mov` to move from a location in memory.  The macro `(define-op ex)` will re-write your function so that the addressing mode is determined at the call site.
 
-```racket
+```asm
 (define-op (mov src dst)) {
     lda src
 	sta dst
@@ -136,7 +136,7 @@ The macro also introduces a few values for you to use that give metadata about t
 
 These let you do some cool things such as writing general operations that are intelligent about their operands.  Example:
 
-```racket
+```asm
 ;;; adds to a 16 bit number, little-endian fashion.
 ;;; detects 8 bit immediate numbers and optimises
 ;;; as appropriate. for absolute, assumes 16bit to 16bit
@@ -169,7 +169,7 @@ Pseudo-ops can also be nested in one another (this seems to mostly work, no gura
 
 Currently only Vice is supported.  The labels you define are passed to the emulator so you will see them in the monitor's disassembly.  There is also a special `break` instruction which will enable that location as a breakpoint in the emulator, greatly simplifying your debugging experience.
 
-```racket
+```asm
 
 (set-emulator-program! emu "C64.prg")
 (set-emulator-execute?! emu true)
@@ -189,7 +189,7 @@ Currently only Vice is supported.  The labels you define are passed to the emula
 
 Commonly you need to generate tables of data.  For this, there is a (very simple indeed) `data` macro, which will let you write some expression to generate a bunch of numbers at the current location, which you can of course label.
 
-```racket
+```asm
 (C64{
 	*=$1000
 	lda mystuff+
