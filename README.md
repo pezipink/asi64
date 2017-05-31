@@ -1,14 +1,14 @@
-# Asi64
+# asi64
 
-Asi64 is a full 6502 assembler, primarily aimed at programming the Commodore 64.
+asi64 is a full 6502 assembler, primarily aimed at programming the Commodore 64.
 
-Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  Asi64 takes a very different approach, and instead extends the [Racket language](https://racket-lang.org/) to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
+Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  asi64 takes a very different approach, and instead extends the [Racket language](https://racket-lang.org/) to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
 
 ## Disclaimer
 This is a tool written primarily for my own enjoyment and education (learning 6502, the C64 and Racket).  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
 
 ## Getting Started
-You can find Asi64 on Racket's package manager. `raco pkg install asi64` should get you setup and ready to go.
+You can find asi64 on Racket's package manager. `raco pkg install asi64` should get you setup and ready to go.
 Create a racket file somewhere for your program.  Here is a minimal example.
  
  ```asm
@@ -24,7 +24,7 @@ Create a racket file somewhere for your program.  Here is a minimal example.
       jmp loop-  ;loop forever
 })
  ```
- Asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
+ asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
 
  The 6502 program itself is expected to be in a single `C64` form.  Anything between `{ ... } ` will be seen as 6502 assembler - more on the full syntax and features in just a moment.
 
@@ -41,7 +41,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 
 
 ### Labels
-In Asi64, a label name must start with `:`.  Labels can currently appear on their own line, or before an opcode.
+In asi64, a label name must start with `:`.  Labels can currently appear on their own line, or before an opcode.
 
 When using a label as a target, the suffix determines how it is resolved.  `+` and `-` will jump to the closest label with that name in front or behind the current location in memory.  This allows you to have many labels with the same name.  Otherwise, you must specify `:` as a suffix.
 
