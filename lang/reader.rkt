@@ -1,3 +1,6 @@
+;Asi64                       `
+;Copyright Ross McKinlay, 2017
+
 #lang s-exp syntax/module-reader
 asi64
 #:wrapper1 wrapper1

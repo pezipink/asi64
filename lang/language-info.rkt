@@ -1,3 +1,6 @@
+;Asi64                       `
+;Copyright Ross McKinlay, 2017
+
 #lang racket/base
 
 (provide get-language-info)
