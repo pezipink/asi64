@@ -168,8 +168,8 @@ Currently only Vice is supported.  The labels you define are passed to the emula
 ```asm
 
 (set-emulator-program! emu "C64.prg")
-(set-emulator-execute?! emu true)
-(set-emulator-breakpoints?! emu true)
+(set-emulator-execute?! emu #t)
+(set-emulator-breakpoints?! emu #t)
 (set-emulator-path! emu "C:\\Program Files\\WinVICE-3.0-x64\\x64.exe")
 
 (C64 {
