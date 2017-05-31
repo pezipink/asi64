@@ -1,21 +1,10 @@
 ;Asi64
 ;Copyright Ross McKinlay, 2017
-
 #lang racket
-
 (require syntax/readerr)
-(require (for-syntax syntax/parse))
-(provide asi-read)
-(provide asi-read-syntax)
- 
-(define (asi-read in)
-  (parameterize ([current-readtable (make-asi-readtable)])
-    (read in)))
- 
-(define (asi-read-syntax src in)
-  (parameterize ([current-readtable (make-asi-readtable)])
-    (read-syntax src in)))
 
+(provide wrapper1
+         make-asi-readtable)
 
 (define (make-asi-readtable)
   (make-readtable (current-readtable)
@@ -25,6 +14,10 @@
                   #\£ 'terminating-macro read-£
                   #\$ 'terminating-macro read-$
                   ))
+
+(define (wrapper1 thk)
+  (parameterize ([current-readtable (make-asi-readtable)])
+    (thk)))
  
 (define read-lbrace
   (case-lambda

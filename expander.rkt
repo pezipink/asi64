@@ -456,18 +456,9 @@
             #'(find-closest-label 'new-symbol (here) '+)]
          [(string-suffix? s "-")
             #'(find-closest-label 'new-symbol (here) '-)]
-
-         
-         )
-         
-         )
-
-
-     )]))
+         )))]))
           
-        
-
-
+         
 (define-syntax (expand-line stx)
 ; (writeln stx)
   (begin
@@ -594,11 +585,12 @@
                   )
                 (define (create-bool name val)
                   (define is-imm (not (equal? (member name immediates) #f)))
-
+                  (define is-label (and (symbol? val)  (string-suffix? (symbol->string val) ":")))
                   (define fmt (format-id stx "~a-immediate?" name))
                   (define fmt-16 (format-id stx "~a-16bit?" name))
+                  (define is-16 (if is-label #f (list '> val 255))) 
                   (list (datum->syntax stx (list fmt is-imm))
-                        (datum->syntax stx (list fmt-16 (list '> val 255)))))
+                        (datum->syntax stx (list fmt-16 is-16))))
                 (with-syntax
                   ([arg-bools (datum->syntax stx (flatten (map create-bool names all-args)))]
                    [new-body (datum->syntax stx (reverse new-body))])
@@ -616,7 +608,7 @@
         [(list-rest a _) #:when (f a location) a]
         [(list-rest a tail) (aux tail)])))
   (let ([labels (hash-ref (context-jump-table prog) key)])
-    (wdb "searching labels ~A from ~a ~a" labels location relative)
+    (wdb "searching labels ~A for ~a from ~a ~a" labels key location relative)
     (if (= 1 (length labels))
         (car labels)
         (aux labels))))

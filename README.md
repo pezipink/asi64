@@ -8,12 +8,11 @@ Traditional assemblers provide various scripting and macro facilities to ease th
 This is a tool written primarily for my own enjoyment and education (learning 6502, the C64 and Racket).  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
 
 ## Getting Started
-You can find Asi64 on Racket's package manager. `raco pkg install Asi64` should get you setup and ready to go.
+You can find Asi64 on Racket's package manager. `raco pkg install asi64` should get you setup and ready to go.
 Create a racket file somewhere for your program.  Here is a minimal example.
  
  ```racket
-#lang reader (lib "Asi64")
-(require (lib "Asi64/expander.rkt"))
+#lang asi64
 
 (set-emulator-program! emu "c64.prg")
 (set-emulator-execute?! emu #t)
@@ -25,8 +24,6 @@ Create a racket file somewhere for your program.  Here is a minimal example.
       jmp loop-  ;loop forever
 })
  ```
-
- Asi64 is not a full `#lang` just yet.  Since it extends racket, the first line redirects the normal Racket reader to use Asi64's instead.  The actual assembler and macro expander layer is also required if you want anything interesting to happen.
 
  Asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
 
@@ -163,7 +160,7 @@ These let you do some cool things such as writing general operations that are in
 
 You might notice some other handy functions being used here.  `(lo-byte)` `(high-byte)` and `(here)`.  The latter will yield the current instruction location and is handy for infinte loops, skipping instructions and self-modifing code, without having to use labels.
 
-Pseudo-ops can also be nested in one another (this seems to mostly work, no gurantees!)
+Pseudo-ops can also someimes be nested in one another (working on this!)
 
 ### Emulator support
 
