@@ -691,7 +691,7 @@
          (for ([i  (vector-copy (context-data prog)(context-minl prog) (context-maxl prog) )])
            (write-byte i out))
          (close-output-port out)
-         (unless (not (emulator-execute? emu))
+         (when (emulator-execute? emu)
              (begin
                (let ([out (open-output-file (mon-commands-file) #:exists 'replace)])
                  (when (emulator-breakpoints? emu)
@@ -699,8 +699,7 @@
                     (context-breakpoints prog)
                     (λ (loc)
                       (write-string (format "break ~a\n" (number->string loc 16)) out))))
-                 (when (emulator-labels? emu)
-                   
+                 (when (emulator-labels? emu)                   
                    (hash-for-each
                     (context-jump-table prog)
                     (λ (k dests)
