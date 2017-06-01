@@ -19,9 +19,9 @@ Create a racket file somewhere for your program.  Here is a minimal example.
 (set-emulator-path! emu "C:\\Program Files\\WinVICE-3.0-x64\\x64.exe")
 
 (C64 {
-      *= $1000   ;start at $1000
+       *= $1000   ;start at $1000
 :loop inc $d021  ;flash border
-      jmp loop-  ;loop forever
+       jmp loop-  ;loop forever
 })
  ```
  asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
