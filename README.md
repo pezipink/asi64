@@ -2,7 +2,7 @@
 
 asi64 is a full 6502 assembler, primarily aimed at programming the Commodore 64.
 
-Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  asi64 takes a very different approach, and instead extends the [Racket language](https://racket-lang.org/) to become an assembler.  This means you get the entire of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
+Traditional assemblers provide various scripting and macro facilities to ease the tedium of writing assembly code and generating data.  asi64 takes a very different approach, and instead extends the [Racket language](https://racket-lang.org/) to become an assembler.  This means you get the entirety of the racket language at your disposal to help write your assembly.  Racket's extremely powerful macro system along with functional, object and imperative paradigms, and a huge, mature standard library are all accessible.
 
 ## Disclaimer
 This is a tool written primarily for my own enjoyment and education (learning 6502, the C64 and Racket).  At the moment, it is not very user-friendly. Consider this a pre-alpha and playground that is liable to change a great deal at any moment.  Having said that, if you use and like this, or do something cool with it, [please let me know!](https://twitter.com/pezi_pink)
@@ -65,6 +65,8 @@ Finally, a macro `label-loc` will return the 16bit value of the label directly (
     inc (+ (label-loc a-) 1) ;self modifing code
     jmp a-
 ```
+
+Note this currently only works if the label was defined before the macro use in the source. (TODO)
 
 ### Expressions
 Even inside `{ }` blocks, you still have all of racket.  As long as the code ends up being something the assembler expects, you can write whatever you like.
