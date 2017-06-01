@@ -41,7 +41,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 
 
 ### Labels
-In asi64, a label name must start with `:`.  Labels can currently appear on their own line, or before an opcode.
+In asi64, a label name must start with `:`.  Labels can appear on their own line, before an opcode and/or before an operand.  The latter is especially useful for self modifiying code.
 
 When using a label as a target, the suffix determines how it is resolved.  `+` and `-` will jump to the closest label with that name in front or behind the current location in memory.  This allows you to have many labels with the same name.  Otherwise, you must specify `:` as a suffix.
 
@@ -67,6 +67,15 @@ Finally, a macro `label-loc` will return the 16bit value of the label directly (
 ```
 
 Note this currently only works if the label was defined before the macro use in the source. (TODO)
+
+The above example is for illustration only, it could be written easier using an operand label like so.
+
+```asm
+:a  lda :b @0
+    sta $d021
+    inc b:
+    jmp a:
+```
 
 ### Expressions
 Even inside `{ }` blocks, you still have all of racket.  As long as the code ends up being something the assembler expects, you can write whatever you like.

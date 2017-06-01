@@ -302,6 +302,12 @@
 (define prog (context (make-vector 65536 #x0) 0 65536 0 (make-hash) (make-hash) (make-hash) (mutable-set)))
 (define emu (emulator "" "" true true false))
 
+(define (configure-emu emu-path program-path execute-emu? enable-breakpoints?)
+  (set-emulator-program! emu program-path)
+  (set-emulator-execute?! emu execute-emu?)
+  (set-emulator-breakpoints?! emu enable-breakpoints?)
+  (set-emulator-path! emu emu-path))
+
 (define (mon-commands-file)
   (string-append (emulator-program emu) ".mon"))
 
@@ -338,6 +344,9 @@
 (define (set-jump-source-current label)
   (set-jump-source label (context-location prog)))
 
+(define (set-jump-source-next label)
+  (set-jump-source label (+ (context-location prog) 1)))
+
 (define (add-jump-dest label type relative location)
   (wdb "adding jump dest ~a ~a ~a ~a" label type relative location)
   (let* ([h (context-labels-waiting prog)]
@@ -353,11 +362,11 @@
 (define (set-current-value v)
   (vector-set! (context-data prog) (context-location prog) v))
 
-(define (try-set-jump-source expr)
+(define (try-set-jump-source expr f)
   (wdb "in try set jump source with ~a" expr)
   (cond [(symbol? expr)
          (wdb "setting jump source ~a" expr)
-         (set-jump-source-current (symbol->string expr))]))
+         (f (symbol->string expr))]))
 
 (define (write-transition-target branch? expr func)
   (wdb "write trans target ~a ~a " branch? expr)
@@ -421,10 +430,9 @@
 
 
 (define (process-line inputs)
-  (match-let ([(list source-label opcode target indirect immediate register) inputs])
+  (match-let ([(list source-label source-label2 opcode target indirect immediate register) inputs])
     (begin
       (wdb "process-line ~a ~a ~a ~a ~a ~a" source-label opcode target indirect immediate register)
-      (try-set-jump-source source-label)
       (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])
         (to-bytes (list opcode addressing-mode target))))))
                
@@ -463,23 +471,28 @@
 ; (writeln stx)
   (begin
     (syntax-parse stx
-    [(_ lab (~literal *=) t:nat _ _ _ )
+    [(_ lab lab2 (~literal *=) t:nat _ _ _ )
      #'(set-location t)]
 
-    [(_ lab op (~or p:label-targ p:nat) imm ind reg)
-     #'(write-values (process-line (list 'lab 'op 'p ind imm 'reg)))]
+    [(_ lab lab2 op (~or p:label-targ p:nat) imm ind reg)
+     #'(begin
+         (try-set-jump-source 'lab set-jump-source-current)
+         (try-set-jump-source 'lab2 set-jump-source-next)
+         (write-values (process-line (list 'lab 'lab2 'op 'p ind imm 'reg))) )]
             
-    [(_ lab #f p:expr _ _ _)
+    [(_ lab lab2 #f p:expr _ _ _)
      ; this case is an expression with no opcode, so we let it pass through
-
      ; but stil allow for a label
      (begin       
        #'(begin
            (try-set-jump-source `lab)
            p))]
     
-    [(_ lab op p:expr imm ind reg)
-     #'(write-values (process-line (list 'lab 'op  p ind imm 'reg)))])))
+    [(_ lab lab2 op p:expr imm ind reg)
+     #'(begin
+         (try-set-jump-source 'lab set-jump-source-current)
+         (try-set-jump-source 'lab set-jump-source-next)
+         (write-values (process-line (list 'lab 'lab2 'op  p ind imm 'reg))))])))
 
 (define-syntax (6502-line stx)  
   (define-syntax-class immediate
@@ -499,6 +512,7 @@
     [(_ (~seq
          (~optional label:label #:defaults ([label #'#f]))
          oc:id
+         (~optional label2:label #:defaults ([label2 #'#f]))
          (~optional ind:indirect #:defaults ([ind #'#f]))
          (~optional imm:immediate #:defaults ([imm #'#f]))
          (~optional (~or targ:label-targ targ:id targ:number targ:expr) #:defaults ([targ #'#f]))
@@ -506,7 +520,7 @@
                     
      #'(begin
          (expand-line
-          label oc targ
+          label label2 oc targ
           (equal? `#:immediate `imm)
           (equal? `#:indirect `ind)
           reg))]
@@ -537,7 +551,8 @@
       [(list-rest a tail) #:when (equal? a needle) index]
       [(list-rest a tail) (aux tail (+ index 1))]))
   (aux haystack 0))
-                  
+
+;; i have no idea what I am doing, this is probably the worst!
 (define-syntax (define-op stx)
   (syntax-parse stx
     [(_ (name args ...) body)
@@ -697,4 +712,3 @@
   
 
 (provide (all-defined-out))
-
