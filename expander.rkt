@@ -506,9 +506,9 @@
 
   (syntax-parse stx
     [(_ label:label)
-     #'(try-set-jump-source `label)]
+     #'(try-set-jump-source `label set-jump-source-current)]
     [(_ label:label e:expr)
-        #'(begin (try-set-jump-source `label) e) ]
+        #'(begin (try-set-jump-source `label set-jump-source-current) e) ]
     [(_ (~seq
          (~optional label:label #:defaults ([label #'#f]))
          oc:id
