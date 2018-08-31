@@ -9,7 +9,7 @@
 (require (for-syntax racket/match))
 (require (for-syntax racket/syntax))
 (require (for-syntax racket/list))
-(define is-debug #f)
+(define is-debug #t)
 
 (define-syntax (wdb stx)  
   (syntax-parse stx
@@ -468,13 +468,14 @@
           
          
 (define-syntax (expand-line stx)
-; (writeln stx)
+ (writeln stx)
   (begin
     (syntax-parse stx
     [(_ lab lab2 (~literal *=) t:nat _ _ _ )
      #'(set-location t)]
 
     [(_ lab lab2 op (~or p:label-targ p:nat) imm ind reg)
+     (writeln "2")
      #'(begin
          (try-set-jump-source 'lab set-jump-source-current)
          (try-set-jump-source 'lab2 set-jump-source-next)
@@ -491,7 +492,7 @@
     [(_ lab lab2 op p:expr imm ind reg)
      #'(begin
          (try-set-jump-source 'lab set-jump-source-current)
-         (try-set-jump-source 'lab set-jump-source-next)
+         (try-set-jump-source 'lab2 set-jump-source-next)
          (write-values (process-line (list 'lab 'lab2 'op  p ind imm 'reg))))])))
 
 (define-syntax (6502-line stx)  
@@ -517,7 +518,6 @@
          (~optional imm:immediate #:defaults ([imm #'#f]))
          (~optional (~or targ:label-targ targ:id targ:number targ:expr) #:defaults ([targ #'#f]))
          (~optional reg:register #:defaults ([reg #'#f]))))
-                    
      #'(begin
          (expand-line
           label label2 oc targ
