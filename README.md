@@ -26,7 +26,7 @@ Create a racket file somewhere for your program.  Here is a minimal example.
        jmp loop-  ;loop forever
 })
  ```
- asi64 supports various emulator features.  Currently, it is targetted at [WinVice](http://vice-emu.sourceforge.net/) (I guess the mac version should work as well with a small tweak or two, PRs welcome!). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
+ asi64 supports various emulator features.  Currently, it is targetted at [Vice](http://vice-emu.sourceforge.net/). In the preceding program, we tell the assembler to create a file called c64.prg, and pass along the location of the C64 emulator.
 
  The 6502 program itself is expected to be in a single `C64` form.  Anything between `{ ... } ` will be seen as 6502 assembler - more on the full syntax and features in just a moment.
 
