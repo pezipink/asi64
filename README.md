@@ -16,7 +16,9 @@ Create a racket file somewhere for your program.  Here is a minimal example.
 
 (set-emulator-program! emu "c64.prg")
 (set-emulator-execute?! emu #t)
-(set-emulator-path! emu "C:\\Program Files\\WinVICE-3.0-x64\\x64.exe")
+(if (eq? (system-type 'os) 'windows)
+   (set-emulator-path! emu "C:\\Program Files\\WinVICE-3.0-x64\\x64.exe")
+   (set-emulator-path! emu "/snap/bin/vice-jz.x64"))
 
 (C64 {
        *= $1000   ;start at $1000
