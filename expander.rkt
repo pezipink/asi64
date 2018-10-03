@@ -312,12 +312,16 @@
   (string-append (emulator-program emu) ".mon"))
 
 (define (execute-vice)
-  (shell-execute
-   #f
-   (emulator-path emu)
-   (format "-moncommands \"~a\" \"~a\"" (mon-commands-file) (emulator-program emu))
-   (current-directory)
-   'sw_shownormal))
+  (if (eq? (system-type 'os) 'windows)
+      (shell-execute
+       #f
+       (emulator-path emu)
+       (format "-moncommands \"~a\" \"~a\"" (mon-commands-file) (emulator-program emu))
+       (current-directory)
+       'sw_shownormal)   
+      (system      
+       (format "\"~a\" -moncommands \"~a\" \"~a\"" (emulator-path emu) (mon-commands-file) (emulator-program emu))
+       )))
     
 (define (update-min v)
   (cond [(< v (context-minl prog)) (set-context-minl! prog v)]))
