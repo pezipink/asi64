@@ -504,11 +504,13 @@
   (define-syntax-class register
     (pattern (~or (~literal x) (~literal y))))
 
-  (syntax-parse stx
+  (syntax-parse stx #:datum-literals (=)
     [(_ label:label)
      #'(try-set-jump-source `label set-jump-source-current)]
     [(_ label:label e:expr)
-        #'(begin (try-set-jump-source `label set-jump-source-current) e) ]
+     #'(begin (try-set-jump-source `label set-jump-source-current) e) ]
+    [(_ v:identifier = e:expr)
+     #'(define v e)]
     [(_ (~seq
          (~optional label:label #:defaults ([label #'#f]))
          oc:id
