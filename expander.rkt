@@ -56,7 +56,6 @@
   (wdb "matching ~a" input)
   (match input
     [(list 'break 'i #f)        (set-add! (context-breakpoints prog) (context-location prog))]
-;    [(list '+= 'i #f)       (set-location t)]
      ; ORA
     [(list 'ora 'zpxi (8bit x) )(list #x01 x)]
     [(list 'ora 'zp   (8bit x) )(list #x05 x)]
@@ -198,10 +197,9 @@
     [(list 'bit 'zp   (8bit x) )(list #x24 x)]
     [(list 'bit 'abs  (16bit x) )(list #x2C x)]
 
-    [(list 'jmp _   x )        (list #x4C (transition 'jump x))]
-
     ;(JMP)
-    [(list 'jmpi 'abs (16bit x) )(list #x6C (transition 'jump x))]
+    [(list 'jmp 'jmpi (16bit x) )(list #x6C (transition 'jump x))]
+    [(list 'jmp _   x )        (list #x4C (transition 'jump x))]
 
     ;STY
     [(list 'sty 'zp   (8bit x) )(list #x84 x)]
