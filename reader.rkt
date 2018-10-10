@@ -71,7 +71,7 @@
          [str (cond [(number? input) (number->string input)]
                     [(symbol? input) (symbol->string input)]
                     [else input])])
-    (string->number str radix)))
+    (string->number (string-replace str "_" "") radix)))
 
 (define (parse-6502-block val in src)  
   (define (parse-6502-line acc paren-count)

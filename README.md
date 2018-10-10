@@ -37,6 +37,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 
 * `*=` instructs the assembler to move to and assemble from the memory location provided
 * You can use $ and % for hex and binary literals.  These work anywhere, not just inside {  } blocks.
+* Binary literals can also contain any amount of `_` characters, to visuall split groups of bits.
 * `@` is used for immediate addressing mode. The traditional `lda #42` is written as `lda @42`
 * Indexed addressing modes are the same, but without a comma.  `sta $0400,x` becomes `sta $0400 x`
 * Indirect addressing modes I had to butcher a bit, since the traditional parens would have messed everything up.  Currently, it is denoted by the `£` character, as it is the only one I could find that isn't used for something in racket already.  Therefore,  `sta ($0400),y` becomes `sta £ $0400 y` and `jmp ($4000)` becomes `jmp £ $4000`
@@ -112,7 +113,7 @@ It is inconvenient to write `(define x $42)`  everywhere you need a constant.  A
 ```asm
 {
         a = $42
-        b = %00001111
+        b = %0000_1111
         c = (list 1 $2 %11) 
 }
 ```
