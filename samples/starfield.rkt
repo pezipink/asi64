@@ -79,7 +79,7 @@
                 [(4) (data perm4)]))))                   
            
 	*= $1000
-        ;screen at $2800 charset at $2000
+        ;screen at $0c00 charset at $2000
 	(mov @%00111000 vic-control)
 	(mov @black background)
       	(mov @black border)

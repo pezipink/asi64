@@ -115,11 +115,10 @@ It is inconvenient to write `(define x $42)`  everywhere you need a constant.  A
         b = %00001111
         c = (list 1 $2 %11) 
 }
-
+```
 
 Whilst this works within any nested 6502 block, it can be quite useful to define a section of these near the top of your file, outside of the `C64` form.
  
-```
 
 ### Functions
 You can define and call racket functions that yield assembly code.
