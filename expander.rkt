@@ -19,14 +19,6 @@
   [(_ text args ...)
    #'(when is-debug
        (writeln (format text args ...)))]))
-(define-syntax (w stx)  
-  (syntax-parse stx
-    [(_ text)
-     #'
-         (writeln text)]
-  [(_ text args ...)
-   #'
-       (writeln (format text args ...))]))
 
 (define (lo-byte input)
   (bitwise-and input #xFF))
