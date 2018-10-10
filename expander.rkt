@@ -19,6 +19,14 @@
   [(_ text args ...)
    #'(when is-debug
        (writeln (format text args ...)))]))
+(define-syntax (w stx)  
+  (syntax-parse stx
+    [(_ text)
+     #'
+         (writeln text)]
+  [(_ text args ...)
+   #'
+       (writeln (format text args ...))]))
 
 (define (lo-byte input)
   (bitwise-and input #xFF))
@@ -296,7 +304,7 @@
 
 (struct context (data location minl maxl jump-table labels-waiting branches-waiting breakpoints) #:mutable #:transparent)
 (struct emulator (path program breakpoints? labels? execute?) #:mutable #:transparent)
-(struct target-label (type relative location))
+(struct target-label (type relative location) #:transparent)
 (define prog (context (make-vector 65536 #x0) 0 65536 0 (make-hash) (make-hash) (make-hash) (mutable-set)))
 (define emu (emulator "" "" true true false))
 
@@ -386,7 +394,6 @@
              [(list (or 'lo 'hi) (or '+ '-))
               (substring s 1 (- (string-length s) 1))]
              [(list (or 'lo 'hi) _)
-              (wdb "in here ~a" (substring s 1))
               (substring s 1(- (string-length s) 1))]
              [(list _ (or '+ '-))
               (substring s 0 (- (string-length s) 1))]
@@ -435,7 +442,7 @@
   (match-let ([(list source-label source-label2 opcode target indirect immediate register) inputs])
     (begin
       (wdb "process-line ~a ~a ~a ~a ~a ~a" source-label opcode target indirect immediate register)
-      (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])
+      (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])        
         (to-bytes (list opcode addressing-mode target))))))
                
 
@@ -677,17 +684,31 @@
           (context-branches-waiting prog)
           (λ (k dest)
             (for [(current-target dest)]
-              (let ([actual
-                     (find-closest-label
+              (let*
+                  ; find the label
+                  ([actual  
+                    (find-closest-label
                       k
                       (target-label-location current-target)
-                      (target-label-relative current-target))])
-                (wdb "writing branch dest ~a ~a" k actual)
+                      (target-label-relative current-target))]
+                   ; calculate offset in bytes
+                   [amount (- actual (target-label-location current-target) 1)])
+                (define (print-warning)
+                  (writeln
+                   (format "warning: attempted to branch over +/-127 (~a) bytes to label ~a from location ~a"
+                            amount k (target-label-location current-target))))
+                (cond
+                  [(> amount 127) (print-warning)]
+                  [(< amount -127) (print-warning)])
                 (vector-set!
                  (context-data prog)
                  (target-label-location current-target)
                  (lo-byte (- actual (target-label-location current-target) 1)))))))
+                  
 
+         ; produce warnings 
+;         (validate (context-data prog))
+         
          ;write numbers to file!
          (define out (open-output-file (emulator-program emu) #:exists 'replace #:mode 'binary))
          (write-byte (lo-byte (context-minl prog)) out)
