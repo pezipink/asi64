@@ -206,8 +206,8 @@
     [(list 'bit 'abs  (16bit x) )(list #x2C x)]
 
     ;(JMP)
-    [(list 'jmp 'jmpi (16bit x) )(list #x6C (transition 'jump x))]
-    [(list 'jmp _   x )        (list #x4C (transition 'jump x))]
+    [(list 'jmp 'jmpi x )(list #x6C (transition 'jump x))]
+    [(list 'jmp _     x )(list #x4C (transition 'jump  x))]
 
     ;STY
     [(list 'sty 'zp   (8bit x) )(list #x84 x)]
@@ -442,7 +442,14 @@
   (match-let ([(list source-label source-label2 opcode target indirect immediate register) inputs])
     (begin
       (wdb "process-line ~a ~a ~a ~a ~a ~a" source-label opcode target indirect immediate register)
-      (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])        
+      (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])
+        ; special case here to check for the 6502 bug where you can't use an indirect jump
+        ; at the end of a page.
+        (when (and (eq? opcode 'jmp)
+                   (eq? addressing-mode 'jmpi)
+                   (number? target)
+                   (eq? (lo-byte target) 255))
+            (writeln (format "warning: indirect jump target on page boundary at $~x!" (here))))
         (to-bytes (list opcode addressing-mode target))))))
                
 
@@ -658,6 +665,16 @@
                       k
                       (target-label-location current-target)
                       (target-label-relative current-target))])
+                ; if this is an indirect jump, emit a warning if the lo byte is on the end of
+                ; a page. here we check the previous byte for 6C which is indirect jump.
+                (when
+                  (and
+                   (eq? (vector-ref
+                         (context-data prog)
+                         (- (target-label-location current-target) 1)) #x6C)
+                   (eq? (lo-byte actual) 255))
+                  (writeln (format "warning: indirect jump target on page boundary at $~x ~a"
+                                   (target-label-location current-target) k)))
                 (case (target-label-type current-target)
                    ['full
                     (begin
@@ -693,22 +710,17 @@
                       (target-label-relative current-target))]
                    ; calculate offset in bytes
                    [amount (- actual (target-label-location current-target) 1)])
-                (define (print-warning)
+
+                (when (or (> amount 127) (< amount 128))
                   (writeln
-                   (format "warning: attempted to branch over +/-127 (~a) bytes to label ~a from location ~a"
+                   (format "warning: attempted to branch over +/-127 (~a) bytes to label ~a from location $~x"
                             amount k (target-label-location current-target))))
-                (cond
-                  [(> amount 127) (print-warning)]
-                  [(< amount -127) (print-warning)])
+
                 (vector-set!
                  (context-data prog)
                  (target-label-location current-target)
                  (lo-byte (- actual (target-label-location current-target) 1)))))))
-                  
-
-         ; produce warnings 
-;         (validate (context-data prog))
-         
+                           
          ;write numbers to file!
          (define out (open-output-file (emulator-program emu) #:exists 'replace #:mode 'binary))
          (write-byte (lo-byte (context-minl prog)) out)
