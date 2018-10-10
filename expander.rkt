@@ -402,6 +402,13 @@
 
 (define (here) (context-location prog))
 
+(define (align n)
+  (define (aux i)
+    (if (eq? (remainder i n) 0)
+        (set-location i)
+        (aux (+ i 1))))
+  (aux (context-location prog)))
+
 (define (write-value expr)
  ; (writeln (format "writing value ~a" expr))
   (cond [(symbol? expr)
@@ -481,6 +488,9 @@
     (syntax-parse stx
     [(_ lab lab2 (~literal *=) t:nat _ _ _ )
      #'(set-location t)]
+
+    [(_ lab lab2 (~literal /=) t:nat _ _ _ )
+     #'(align t)]
 
     [(_ lab lab2 op (~or p:label-targ p:nat) imm ind reg)
      #'(begin
@@ -720,6 +730,7 @@
          (for ([i  (vector-copy (context-data prog)(context-minl prog) (context-maxl prog) )])
            (write-byte i out))
          (close-output-port out)
+
          (when (emulator-execute? emu)
              (begin
                (let ([out (open-output-file (mon-commands-file) #:exists 'replace)])
