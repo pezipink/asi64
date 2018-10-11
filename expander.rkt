@@ -52,220 +52,258 @@
        #'(app extract-little-endian-address (? identity v))])))
 
 (struct transition (type label))
-(define (to-bytes input)
-  (wdb "matching ~a" input)
-  (match input
-    [(list 'break 'i #f)        (set-add! (context-breakpoints prog) (context-location prog))]
-     ; ORA
-    [(list 'ora 'zpxi (8bit x) )(list #x01 x)]
-    [(list 'ora 'zp   (8bit x) )(list #x05 x)]
-    [(list 'ora 'i    (8bit x) )(list #x09 x)]
-    [(list 'ora 'abs  (16bit x) )(list #x0D x)]
-    [(list 'ora 'zpyi (8bit x) )(list #x11 x)]
-    [(list 'ora 'zpx  (8bit x) )(list #x15 x)]
-    [(list 'ora 'absy (16bit x) )(list #x19 x)]
-    [(list 'ora 'absx (16bit x) )(list #x1D x)]
+(struct metadata (opcode          ; opcode symbol
+                  addressing-mode ; symbol
+                  value           ; actual bin representation
+                  operand-size    ; 1, 2 (8 bit), 3 (16 bit)
+                  flags-affected  ; list
+                  cycle-count     ; base cycle cost
+                  page-penalty?   ; +1 cycle if crossing page?
+                  transition-type ; 'none 'branch or 'jump
+                  ) #:transparent)
+
+(define-syntax (create-opcode-metadata stx)
+  (syntax-parse stx
+    [(_ ([opcode
+          addressing-mode
+          value
+          size
+          (flag ...)
+          cycles
+          page-penalty?
+          transition-type] ...))
+     #'(make-hash
+        (list
+         (cons
+          (cons opcode addressing-mode)
+          (metadata
+           opcode
+           addressing-mode
+           value
+           size
+           (list flag ...)
+           cycles
+           page-penalty?
+           transition-type)) ...))]))
+
+(define opcode-metadata
+  (create-opcode-metadata
+   (['ora 'zpxi #x01 2 () 1 #f 'none] 
+    ['ora 'zp   #x05 2 () 1 #f 'none] 
+    ['ora 'i    #x09 2 () 1 #f 'none] 
+    ['ora 'abs  #x0D 3 () 1 #f 'none] 
+    ['ora 'zpyi #x11 2 () 1 #f 'none] 
+    ['ora 'zpx  #x15 2 () 1 #f 'none] 
+    ['ora 'absy #x19 3 () 1 #f 'none] 
+    ['ora 'absx #x1D 3 () 1 #f 'none] 
 
     ; AND
-    [(list 'and 'zpxi (8bit x) )(list #x21 x)]
-    [(list 'and 'zp   (8bit x) )(list #x25 x)]
-    [(list 'and 'i    (8bit x) )(list #x29 x)]
-    [(list 'and 'abs  (16bit x) )(list #x2D x)]
-    [(list 'and 'zpyi (8bit x) )(list #x31 x)]
-    [(list 'and 'zpx  (8bit x) )(list #x35 x)]
-    [(list 'and 'absy (16bit x) )(list #x39 x)]
-    [(list 'and 'absx (16bit x) )(list #x3D x)]
+    ['and 'zpxi #x21 2 () 1 #f 'none] 
+    ['and 'zp   #x25 2 () 1 #f 'none] 
+    ['and 'i    #x29 2 () 1 #f 'none] 
+    ['and 'abs  #x2D 3 () 1 #f 'none] 
+    ['and 'zpyi #x31 2 () 1 #f 'none] 
+    ['and 'zpx  #x35 2 () 1 #f 'none] 
+    ['and 'absy #x39 3 () 1 #f 'none] 
+    ['and 'absx #x3D 3 () 1 #f 'none] 
 
     ;EOR
-    [(list 'eor 'zpxi (8bit x) )(list #x41 x)]
-    [(list 'eor 'zp   (8bit x) )(list #x45 x)]
-    [(list 'eor 'i    (8bit x) )(list #x49 x)]
-    [(list 'eor 'abs  (16bit x) )(list #x4D x)]
-    [(list 'eor 'zpyi (8bit x) )(list #x51 x)]
-    [(list 'eor 'zpx  (8bit x) )(list #x55 x)]
-    [(list 'eor 'absy (16bit x) )(list #x59 x)]
-    [(list 'eor 'absx (16bit x) )(list #x5D x)]
+    ['eor 'zpxi #x41 2 () 1 #f 'none] 
+    ['eor 'zp   #x45 2 () 1 #f 'none] 
+    ['eor 'i    #x49 2 () 1 #f 'none] 
+    ['eor 'abs  #x4D 3 () 1 #f 'none] 
+    ['eor 'zpyi #x51 2 () 1 #f 'none] 
+    ['eor 'zpx  #x55 2 () 1 #f 'none] 
+    ['eor 'absy #x59 3 () 1 #f 'none] 
+    ['eor 'absx #x5D 3 () 1 #f 'none] 
 
     ;ADC
-    [(list 'adc 'zpxi (8bit x) )(list #x61 x)]
-    [(list 'adc 'zp   (8bit x) )(list #x65 x)]
-    [(list 'adc 'i    (8bit x) )(list #x69 x)]
-    [(list 'adc 'abs  (16bit x) )(list #x6D x)]
-
-    
-    [(list 'adc 'zpyi (8bit x) )(list #x71 x)]
-    [(list 'adc 'zpx  (8bit x) )(list #x75 x)]
-    [(list 'adc 'absy (16bit x) )(list #x79 x)]
-    [(list 'adc 'absx (16bit x) )(list #x7D x)]
+    ['adc 'zpxi #x61 2 () 1 #f 'none] 
+    ['adc 'zp   #x65 2 () 1 #f 'none] 
+    ['adc 'i    #x69 2 () 1 #f 'none] 
+    ['adc 'abs  #x6D 3 () 1 #f 'none]     
+    ['adc 'zpyi #x71 2 () 1 #f 'none] 
+    ['adc 'zpx  #x75 2 () 1 #f 'none] 
+    ['adc 'absy #x79 3 () 1 #f 'none] 
+    ['adc 'absx #x7D 3 () 1 #f 'none] 
 
     ;STA
-    [(list 'sta 'zpxi (8bit x) )(list #x81 x)]
-    [(list 'sta 'zp   (8bit x) )(list #x85 x)]
-    ; no immiediate 
-    [(list 'sta 'abs  (16bit x) )(list #x8D x)]
-    [(list 'sta 'zpyi (8bit x) )(list #x91 x)]
-    [(list 'sta 'zpx  (8bit x) )(list #x95 x)]
-    [(list 'sta 'absy (16bit x) )(list #x99 x)]
-    [(list 'sta 'absx (16bit x) )(list #x9D x)]
+    ['sta 'zpxi #x81 2 () 1 #f 'none] 
+    ['sta 'zp   #x85 2 () 1 #f 'none] 
+    ['sta 'abs  #x8D 3 () 1 #f 'none] 
+    ['sta 'zpyi #x91 2 () 1 #f 'none] 
+    ['sta 'zpx  #x95 2 () 1 #f 'none] 
+    ['sta 'absy #x99 3 () 1 #f 'none] 
+    ['sta 'absx #x9D 3 () 1 #f 'none] 
 
     ;LDA
-    [(list 'lda 'zpxi (8bit x) )(list #xA1 x)]
-    [(list 'lda 'zp   (8bit x) )(list #xA5 x)]
-    [(list 'lda 'i    (8bit x) )(list #xA9 x)]
-    [(list 'lda 'abs  (16bit x) )(list #xAD x)]
-    [(list 'lda 'zpyi (8bit x) )(list #xB1 x)]
-    [(list 'lda 'zpx  (8bit x) )(list #xB5 x)]
-    [(list 'lda 'absy (16bit x) )(list #xB9 x)]
-    [(list 'lda 'absx (16bit x) )(list #xBD x)]
-
+    ['lda 'zpxi #xA1 2 () 1 #f 'none] 
+    ['lda 'zp   #xA5 2 () 1 #f 'none] 
+    ['lda 'i    #xA9 2 () 1 #f 'none] 
+    ['lda 'abs  #xAD 3 () 1 #f 'none] 
+    ['lda 'zpyi #xB1 2 () 1 #f 'none] 
+    ['lda 'zpx  #xB5 2 () 1 #f 'none] 
+    ['lda 'absy #xB9 3 () 1 #f 'none] 
+    ['lda 'absx #xBD 3 () 1 #f 'none] 
 
     ;CMP
-    [(list 'cmp 'zpxi (8bit x) )(list #xC1 x)]
-    [(list 'cmp 'zp   (8bit x) )(list #xC5 x)]
-    [(list 'cmp 'i    (8bit x) )(list #xC9 x)]
-    [(list 'cmp 'abs  (16bit x) )(list #xCD x)]
-    [(list 'cmp 'zpyi (8bit x) )(list #xD1 x)]
-    [(list 'cmp 'zpx  (8bit x) )(list #xD5 x)]
-    [(list 'cmp 'absy (16bit x) )(list #xD9 x)]
-    [(list 'cmp 'absx (16bit x) )(list #xDD x)]
+    ['cmp 'zpxi #xC1 2 () 1 #f 'none] 
+    ['cmp 'zp   #xC5 2 () 1 #f 'none] 
+    ['cmp 'i    #xC9 2 () 1 #f 'none] 
+    ['cmp 'abs  #xCD 3 () 1 #f 'none] 
+    ['cmp 'zpyi #xD1 2 () 1 #f 'none] 
+    ['cmp 'zpx  #xD5 2 () 1 #f 'none] 
+    ['cmp 'absy #xD9 3 () 1 #f 'none] 
+    ['cmp 'absx #xDD 3 () 1 #f 'none] 
 
     ;SBC
-    [(list 'sbc 'zpxi (8bit x) )(list #xE1 x)]
-    [(list 'sbc 'zp   (8bit x) )(list #xE5 x)]
-    [(list 'sbc 'i    (8bit x) )(list #xE9 x)]
-    [(list 'sbc 'abs  (16bit x))(list #xED x)]
-    [(list 'sbc 'zpyi (8bit x) )(list #xF1 x)]
-    [(list 'sbc 'zpx  (8bit x) )(list #xF5 x)]
-    [(list 'sbc 'absy (16bit x) )(list #xF9 x)]
-    [(list 'sbc 'absx (16bit x) )(list #xFD x)]
+    ['sbc 'zpxi #xE1 2 () 1 #f 'none] 
+    ['sbc 'zp   #xE5 2 () 1 #f 'none] 
+    ['sbc 'i    #xE9 2 () 1 #f 'none] 
+    ['sbc 'abs  #xED 3 () 1 #f 'none] 
+    ['sbc 'zpyi #xF1 2 () 1 #f 'none] 
+    ['sbc 'zpx  #xF5 2 () 1 #f 'none] 
+    ['sbc 'absy #xF9 3 () 1 #f 'none] 
+    ['sbc 'absx #xFD 3 () 1 #f 'none] 
 
-    ; cc = 00
-    
     ;ASL
-    [(list 'asl 'zp   (8bit x) )(list #x06 x)]
-    [(list 'asl 'i    #f          )(list #x0A)]
-    [(list 'asl 'abs  (16bit x) )(list #x0E x)]
-    [(list 'asl 'zpx  (8bit x) )(list #x16 x)]
-    [(list 'asl 'absx (16bit x) )(list #x1E x)]
+    ['asl 'zp   #x06 2 () 1 #f 'none] 
+    ['asl 'none #x0A 1 () 1 #f 'none]
+    ['asl 'abs  #x0E 3 () 1 #f 'none] 
+    ['asl 'zpx  #x16 2 () 1 #f 'none] 
+    ['asl 'absx #x1E 3 () 1 #f 'none] 
 
     ;ROL
-    [(list 'rol 'zp   (8bit x) )(list #x26 x)]
-    [(list 'rol 'i    #f       )(list #x2A)]
-    [(list 'rol 'abs  (16bit x) )(list #x2E x)]
-    [(list 'rol 'zpx  (8bit x) )(list #x36 x)]
-    [(list 'rol 'absx (16bit x) )(list #x3E x)]
+    ['rol 'zp   #x26 2 () 1 #f 'none] 
+    ['rol 'none #x2A 1 () 1 #f 'none]
+    ['rol 'abs  #x2E 3 () 1 #f 'none] 
+    ['rol 'zpx  #x36 2 () 1 #f 'none] 
+    ['rol 'absx #x3E 3 () 1 #f 'none] 
 
     ;LSR
-    [(list 'lsr 'zp   (8bit x) )(list #x46 x)]
-    [(list 'lsr 'i    #f       )(list #x4A)]
-    [(list 'lsr 'abs  (16bit x) )(list #x4E x)]
-    [(list 'lsr 'zpx  (8bit x) )(list #x56 x)]
-    [(list 'lsr 'absx (16bit x) )(list #x5E x)]
+    ['lsr 'zp   #x46 2 () 1 #f 'none] 
+    ['lsr 'none #x4A 1 () 1 #f 'none]
+    ['lsr 'abs  #x4E 3 () 1 #f 'none] 
+    ['lsr 'zpx  #x56 2 () 1 #f 'none] 
+    ['lsr 'absx #x5E 3 () 1 #f 'none] 
 
     ;ROR
-    [(list 'ror 'zp   (8bit x) )(list #x66 x)]
-    [(list 'ror 'i    #f        )(list #x6A)]
-    [(list 'ror 'abs  (16bit x) )(list #x6E x)]
-    [(list 'ror 'zpx  (8bit x) )(list #x76 x)]
-    [(list 'ror 'absx (16bit x) )(list #x7E x)]
+    ['ror 'zp   #x66 2 () 1 #f 'none] 
+    ['ror 'none #x6A 1 () 1 #f 'none]
+    ['ror 'abs  #x6E 3 () 1 #f 'none] 
+    ['ror 'zpx  #x76 2 () 1 #f 'none] 
+    ['ror 'absx #x7E 3 () 1 #f 'none] 
 
     ;STX
-    [(list 'stx 'zp   (8bit x) )(list #x86 x)]
-    [(list 'stx 'abs  (16bit x) )(list #x8E x)]
-    [(list 'stx 'zpy  (8bit x) )(list #x96 x)]
+    ['stx 'zp   #x86 2 () 1 #f 'none] 
+    ['stx 'abs  #x8E 3 () 1 #f 'none] 
+    ['stx 'zpy  #x96 2 () 1 #f 'none] 
 
     ;LDX
-    [(list 'ldx 'i    (8bit x) )(list #xA2 x)]
-    [(list 'ldx 'zp   (8bit x) )(list #xA6 x)]
-    [(list 'ldx 'abs  (16bit x) )(list #xAE x)]
-    [(list 'ldx 'zpx  (8bit x) )(list #xB6 x)]
-    [(list 'ldx 'absy (16bit x) )(list #xBE x)]
+    ['ldx 'i    #xA2 2 () 1 #f 'none] 
+    ['ldx 'zp   #xA6 2 () 1 #f 'none] 
+    ['ldx 'abs  #xAE 3 () 1 #f 'none] 
+    ['ldx 'zpx  #xB6 2 () 1 #f 'none] 
+    ['ldx 'absy #xBE 3 () 1 #f 'none] 
 
     ;DEC
-    [(list 'dec 'zp   (8bit x) )(list #xC6 x)]
-    [(list 'dec 'abs  (16bit x) )(list #xCE x)]
-    [(list 'dec 'zpx  (8bit x) )(list #xD6 x)]
-    [(list 'dec 'absx (16bit x) )(list #xDE x)]
+    ['dec 'zp   #xC6 2 () 1 #f 'none] 
+    ['dec 'abs  #xCE 3 () 1 #f 'none] 
+    ['dec 'zpx  #xD6 2 () 1 #f 'none] 
+    ['dec 'absx #xDE 3 () 1 #f 'none] 
 
     ;INC
-    [(list 'inc 'zp   (8bit x) )(list #xE6 x)]
-    [(list 'inc 'abs  (16bit x) )(list #xEE x)]
-    [(list 'inc 'zpx  (8bit x) )(list #xF6 x)]
-    [(list 'inc 'absx (16bit x) )(list #xFE x)]
+    ['inc 'zp   #xE6 2 () 1 #f 'none] 
+    ['inc 'abs  #xEE 3 () 1 #f 'none] 
+    ['inc 'zpx  #xF6 2 () 1 #f 'none] 
+    ['inc 'absx #xFE 3 () 1 #f 'none] 
 
     ;BIT
-    [(list 'bit 'zp   (8bit x) )(list #x24 x)]
-    [(list 'bit 'abs  (16bit x) )(list #x2C x)]
-
-    ;(JMP)
-    [(list 'jmp 'jmpi x )(list #x6C (transition 'jump x))]
-    [(list 'jmp _     x )(list #x4C (transition 'jump  x))]
+    ['bit 'zp   #x24 2 () 1 #f 'none] 
+    ['bit 'abs  #x2C 3 () 1 #f 'none] 
 
     ;STY
-    [(list 'sty 'zp   (8bit x) )(list #x84 x)]
-    [(list 'sty 'abs  (16bit x) )(list #x8C x)]
-    [(list 'sty 'zpx  (8bit x) )(list #x94 x)]
+    ['sty 'zp   #x84 2 () 1 #f 'none] 
+    ['sty 'abs  #x8C 3 () 1 #f 'none] 
+    ['sty 'zpx  #x94 2 () 1 #f 'none] 
 
     ;LDY
-    [(list 'ldy 'i    (8bit x) )(list #xA0 x)]
-    [(list 'ldy 'zp   (8bit x) )(list #xA4 x)]
-    [(list 'ldy 'abs  (16bit x) )(list #xAC x)]
-    [(list 'ldy 'zpx  (8bit x) )(list #xB4 x)]
-    [(list 'ldy 'absx (16bit x) )(list #xBC x)]
+    ['ldy 'i    #xA0 2 () 1 #f 'none] 
+    ['ldy 'zp   #xA4 2 () 1 #f 'none] 
+    ['ldy 'abs  #xAC 3 () 1 #f 'none] 
+    ['ldy 'zpx  #xB4 2 () 1 #f 'none] 
+    ['ldy 'absx #xBC 3 () 1 #f 'none] 
 
     ;CPY
-    [(list 'cpy 'i    (8bit x) )(list #xC0 x)]
-    [(list 'cpy 'zp   (8bit x) )(list #xC4 x)]
-    [(list 'cpy 'abs  (16bit x))(list #xCC x)]
+    ['cpy 'i    #xC0 2 () 1 #f 'none] 
+    ['cpy 'zp   #xC4 2 () 1 #f 'none] 
+    ['cpy 'abs  #xCC 3 () 1 #f 'none] 
 
     ;CPX
-    [(list 'cpx 'i    (8bit x) )(list #xE0 x)]
-    [(list 'cpx 'zp   (8bit x) )(list #xE4 x)]
-    [(list 'cpx 'abs  (16bit x))(list #xEC x)]
+    ['cpx 'i    #xE0 2 () 1 #f 'none] 
+    ['cpx 'zp   #xE4 2 () 1 #f 'none] 
+    ['cpx 'abs  #xEC 3 () 1 #f 'none] 
 
+    ;JMP / JSR
+    ['jmp 'jmpi #x6C 3 () 1 #f 'jump]
+    ['jmp 'abs  #x4C 3 () 1 #f 'jump]
+    ['jsr 'abs  #x20 3 () 1 #f 'none]
+    
     ;Branches
-    [(list 'bpl _      x        )(list #x10 (transition 'branch x))]
-    [(list 'bmi _      x        )(list #x30 (transition 'branch x))]
-    [(list 'bvc _      x        )(list #x50 (transition 'branch x))]
-    [(list 'bvs _      x        )(list #x70 (transition 'branch x))]
-    [(list 'bcc _      x        )(list #x90 (transition 'branch x))]
-    [(list 'bcs _      x        )(list #xB0 (transition 'branch x))]
-    [(list 'bne _      x        )(list #xD0 (transition 'branch x))]
-    [(list 'beq _      x        )(list #xF0 (transition 'branch x))]
+    ;these are actually "relative" addressing mode,
+    ;but that is not a thing in asi64. You must give it
+    ;either a label or a 16 bit address and it works out
+    ;the relative addressing - hence the ;'abs for these.
+    ['bpl 'abs #x10 2 () 1 #f 'branch] 
+    ['bmi 'abs #x30 2 () 1 #f 'branch]
+    ['bvc 'abs #x50 2 () 1 #f 'branch]
+    ['bvs 'abs #x70 2 () 1 #f 'branch]
+    ['bcc 'abs #x90 2 () 1 #f 'branch]
+    ['bcs 'abs #xB0 2 () 1 #f 'branch]
+    ['bne 'abs #xD0 2 () 1 #f 'branch]
+    ['beq 'abs #xF0 2 () 1 #f 'branch]
 
     ;Everything else
-    [(list 'jsr _ x)             (list #x20 (transition 'jump x))]
-    [(list 'rti _ _                 ) #x40]
-    [(list 'rts _ _                 ) #x60]
-    [(list 'php _ _                 ) #x08]
-    [(list 'plp _ _                 ) #x28]
-    [(list 'pha _ _                 ) #x48]
-    [(list 'pla _ _                 ) #x68]
-    [(list 'dey _ _                 ) #x88]
-    [(list 'tay _ _                 ) #xA8]
-    [(list 'iny _ _                 ) #xC8]
-    [(list 'inx _ _                 ) #xE8]
-    [(list 'clc _ _                 ) #x18]
-    [(list 'sec _ _                 ) #x38]
-    [(list 'cli _ _                 ) #x58]
-    [(list 'sei _ _                 ) #x78]
-    [(list 'tya _ _                 ) #x98]
-    [(list 'clv _ _                 ) #xB8]
-    [(list 'cld _ _                 ) #xD8]
-    [(list 'sed _ _                 ) #xF8]
-    [(list 'txa _ _                 ) #x8A]
-    [(list 'txs _ _                 ) #x9A]
-    [(list 'tax _ _                 ) #xAA]
-    [(list 'tsx _ _                 ) #xBA]
-    [(list 'dex _ _                 ) #xCA]
-    [(list 'nop _ _                 ) #xEA])
-  )
+    ['rti 'none #x40 1 () 1 #f 'none]
+    ['rts 'none #x60 1 () 1 #f 'none]
+    ['php 'none #x08 1 () 1 #f 'none]
+    ['plp 'none #x28 1 () 1 #f 'none]
+    ['pha 'none #x48 1 () 1 #f 'none]
+    ['pla 'none #x68 1 () 1 #f 'none]
+    ['dey 'none #x88 1 () 1 #f 'none]
+    ['tay 'none #xA8 1 () 1 #f 'none]
+    ['iny 'none #xC8 1 () 1 #f 'none]
+    ['inx 'none #xE8 1 () 1 #f 'none]
+    ['clc 'none #x18 1 () 1 #f 'none]
+    ['sec 'none #x38 1 () 1 #f 'none]
+    ['cli 'none #x58 1 () 1 #f 'none]
+    ['sei 'none #x78 1 () 1 #f 'none]
+    ['tya 'none #x98 1 () 1 #f 'none]
+    ['clv 'none #xB8 1 () 1 #f 'none]
+    ['cld 'none #xD8 1 () 1 #f 'none]
+    ['sed 'none #xF8 1 () 1 #f 'none]
+    ['txa 'none #x8A 1 () 1 #f 'none]
+    ['txs 'none #x9A 1 () 1 #f 'none]
+    ['tax 'none #xAA 1 () 1 #f 'none]
+    ['tsx 'none #xBA 1 () 1 #f 'none]
+    ['dex 'none #xCA 1 () 1 #f 'none]
+    ['nop 'none #xEA 1 () 1 #f 'none])))
 
+
+(define (to-bytes input)
+  (match-let* ([(list opcode a-mode operand) input]
+               [(metadata _ _ v s _ _ _ tt)                 
+                (hash-ref opcode-metadata (cons opcode a-mode))])
+    (match (list tt s operand)
+       [(list 'none 1 op)         (list v)]
+       [(list 'none 2 (8bit op))  (list v op)]
+       [(list 'none 3 (16bit op)) (list v op)]
+       [(list tt _ op)            (list v (transition tt op))])))
 
 (define (infer-addressing-mode value is-immediate is-indirect register)
   (wdb "infer addressing mode ~a ~a ~a ~a" value is-immediate is-indirect register)
   (if (equal? value #f)
-      'i ; special case for single opcodes with no operands      
+      'none ; special case for single opcodes with no operands      
       (let ([16bit?
              (or
               (and
@@ -448,9 +486,10 @@
                    (eq? addressing-mode 'jmpi)
                    (number? target)
                    (eq? (lo-byte target) 255))
-            (writeln (format "warning: indirect jump target on page boundary at $~x!" (here))))
-        (to-bytes (list opcode addressing-mode target))))))
-               
+          (writeln (format "warning: indirect jump target on page boundary at $~x!" (here))))
+        (if (eq? opcode 'break) ;special "opcode" for emu breakpoints
+            (set-add! (context-breakpoints prog) (context-location prog))
+            (to-bytes (list opcode addressing-mode target)))))))
 
 (begin-for-syntax
   (define-syntax-class label-targ
@@ -465,7 +504,6 @@
     (pattern x:id #:when
              (let ([s (symbol->string (syntax-e #'x))])
                (or (string-prefix? s ":"))))))
-
 
 (define-syntax (label-loc stx)
   (syntax-parse stx
@@ -713,7 +751,7 @@
                    ; calculate offset in bytes
                    [amount (- actual (target-label-location current-target) 1)])
 
-                (when (or (> amount 127) (< amount 128))
+                (when (or (> amount 127) (< amount -127))
                   (writeln
                    (format "warning: attempted to branch over +/-127 (~a) bytes to label ~a from location $~x"
                             amount k (target-label-location current-target))))
