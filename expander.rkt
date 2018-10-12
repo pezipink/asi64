@@ -307,7 +307,7 @@
 
 (define (update-diagnostics input)
   (match-let* ([(list opcode a-mode operand) input]
-               [(metadata _ _ _ s f c pp _)                 
+               [(metadata _ _ _ s f c pp tt)                 
                 (hash-ref opcode-metadata (cons opcode a-mode))])
     (set-metrics-code-size!
      current-metrics
@@ -320,8 +320,13 @@
     (set-metrics-max-cycles!
      current-metrics
      (+ (metrics-max-cycles current-metrics)
-        (if (eq? pp #t) (+ c 1) c)))
-
+        (cond
+          [(and (eq? pp #t) (eq? tt 'branch))
+           (+ c 2)]
+          [(eq? pp #t)
+           (+ c 1)]
+          [else c])))
+      
     (printf "~a ~a ~a ~a\n"
             (~a (symbol->string opcode)
                 #:separator " "
@@ -331,8 +336,13 @@
                 #:separator " "
                 #:min-width 6
                 #:align 'left)
-            (~a (if (eq? pp #t)
-                    (format "~a/~a" c (+ c 1)) c)
+            (~a
+             (cond
+               [(and (eq? pp #t) (eq? tt 'branch))
+                (format "~a/~a/~a" c (+ c 1) (+ c 2))]
+               [(eq? pp #t)
+                (format "~a/~a" c (+ c 1))]
+               [else c])
                 #:separator " "
                 #:min-width 6
                 #:align 'left)
@@ -526,7 +536,6 @@
                    (number? target)
                    (eq? (lo-byte target) 255))
           (writeln (format "warning: indirect jump target on page boundary at $~x!" (here))))
-
         (when (and
                (eq? (unbox diagnostics-enabled?) #t)
                (not (eq? opcode 'break)))
