@@ -236,7 +236,7 @@ Commonly you need to generate tables of data.  For this, there is a (very simple
 
 Asi64 knows about the 6502 instruction set and is able to tell you useful information about your code, such as how many cycles each instruction takes, which processor flags they might affect, and how much space the block occupies.
 
-Simply wrap any code you are interesting in seeing metrics about between `?=` and `=?`.  When you assemble, everything will proceed as normal, but you will also see the information about your code blocks in the output window.
+Simply wrap any code you are interestied in seeing metrics about between `?=` and `=?`.  When you assemble, everything will proceed as normal, but you will also see the information about your code blocks in the output window.
 
 ```asm
 ?= ;begin diagnostics
@@ -276,6 +276,8 @@ rts    none   6      ()
 diagnostics finished at $3101
 total code size $15 (21).  min/max cycles (36/38)
 ```
+
+Note that since you can put numbers and data anywhere, asi64 can only show you information about code assembled directly with the assembler syntax.  If you put a `(data ...)` block in the middle of the code, the diagnostics will simply ignore it, even if the bytes equate to valid opcode(s).
 
 ### Programming the assembler internals
 
