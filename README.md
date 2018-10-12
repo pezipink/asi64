@@ -44,6 +44,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 * Indexed addressing modes are the same, but without a comma.  `sta $0400,x` becomes `sta $0400 x`
 * Indirect addressing modes I had to butcher a bit, since the traditional parens would have messed everything up.  Currently, it is denoted by the `£` character, as it is the only one I could find that isn't used for something in racket already.  Therefore,  `sta ($0400),y` becomes `sta £ $0400 y` and `jmp ($4000)` becomes `jmp £ $4000`
 * `/=` aligns the assembler to the next memory location evenly divisble by the value supplied
+* `?=` and `=?` switch on and off compile time diagnostics.  See the Diagnostics section below for more information.
 
 
 ### Labels
@@ -229,6 +230,51 @@ Commonly you need to generate tables of data.  For this, there is a (very simple
 :mystuff   
 	(data %10000000 $FF (for ([i (in-range 1 10)]) i))
 })
+```
+
+### Diagnostics
+
+Asi64 knows about the 6502 instruction set and is able to tell you useful information about your code, such as how many cycles each instruction takes, which processor flags they might affect, and how much space the block occupies.
+
+Simply wrap any code you are interesting in seeing metrics about between `?=` and `=?`.  When you assemble, everything will proceed as normal, but you will also see the information about your code blocks in the output window.
+
+```asm
+?= ;begin diagnostics
+:sprite-y-char-top
+     lda $d001
+     sec
+     sbc @$32       
+     lsr		
+     lsr
+     lsr
+     tax
+     lda screen-rows-lo: x
+     sta screen-lo
+     lda screen-rows-hi: x
+     sta screen-hi
+     rts
+=? ;end
+```
+
+this produces :
+
+```
+diagnostics started at $30ec
+opcode a-mode cycles flags
+lda    abs    4      (Z N)
+sec    none   2      (C)
+sbc    i      2      (C Z V N)
+lsr    none   2      (C Z N)
+lsr    none   2      (C Z N)
+lsr    none   2      (C Z N)
+tax    none   2      (Z N)
+lda    absx   4/5    (Z N)
+sta    zp     3      ()
+lda    absx   4/5    (Z N)
+sta    zp     3      ()
+rts    none   6      ()
+diagnostics finished at $3101
+total code size $15 (21).  min/max cycles (36/38)
 ```
 
 ### Programming the assembler internals

@@ -11,6 +11,11 @@
 (require (for-syntax racket/list))
 (define is-debug #f)
 
+(define diagnostics-enabled? (box #f))
+(struct metrics (min-cycles max-cycles code-size) #:mutable)
+(define current-metrics (metrics 0 0 0))
+
+
 (define-syntax (wdb stx)  
   (syntax-parse stx
     [(_ text)
@@ -88,206 +93,206 @@
 
 (define opcode-metadata
   (create-opcode-metadata
-   (['ora 'zpxi #x01 2 () 1 #f 'none] 
-    ['ora 'zp   #x05 2 () 1 #f 'none] 
-    ['ora 'i    #x09 2 () 1 #f 'none] 
-    ['ora 'abs  #x0D 3 () 1 #f 'none] 
-    ['ora 'zpyi #x11 2 () 1 #f 'none] 
-    ['ora 'zpx  #x15 2 () 1 #f 'none] 
-    ['ora 'absy #x19 3 () 1 #f 'none] 
-    ['ora 'absx #x1D 3 () 1 #f 'none] 
+   (['ora 'zpxi #x01 2 ('Z 'N) 6 #f 'none] 
+    ['ora 'zp   #x05 2 ('Z 'N) 3 #f 'none] 
+    ['ora 'i    #x09 2 ('Z 'N) 2 #f 'none] 
+    ['ora 'abs  #x0D 3 ('Z 'N) 4 #f 'none] 
+    ['ora 'zpyi #x11 2 ('Z 'N) 5 #t 'none] 
+    ['ora 'zpx  #x15 2 ('Z 'N) 4 #f 'none] 
+    ['ora 'absy #x19 3 ('Z 'N) 4 #t 'none] 
+    ['ora 'absx #x1D 3 ('Z 'N) 4 #t 'none] 
 
     ; AND
-    ['and 'zpxi #x21 2 () 1 #f 'none] 
-    ['and 'zp   #x25 2 () 1 #f 'none] 
-    ['and 'i    #x29 2 () 1 #f 'none] 
-    ['and 'abs  #x2D 3 () 1 #f 'none] 
-    ['and 'zpyi #x31 2 () 1 #f 'none] 
-    ['and 'zpx  #x35 2 () 1 #f 'none] 
-    ['and 'absy #x39 3 () 1 #f 'none] 
-    ['and 'absx #x3D 3 () 1 #f 'none] 
+    ['and 'zpxi #x21 2 ('Z 'N) 6 #f 'none] 
+    ['and 'zp   #x25 2 ('Z 'N) 3 #f 'none] 
+    ['and 'i    #x29 2 ('Z 'N) 2 #f 'none] 
+    ['and 'abs  #x2D 3 ('Z 'N) 4 #f 'none] 
+    ['and 'zpyi #x31 2 ('Z 'N) 5 #t 'none] 
+    ['and 'zpx  #x35 2 ('Z 'N) 4 #f 'none] 
+    ['and 'absy #x39 3 ('Z 'N) 4 #t 'none] 
+    ['and 'absx #x3D 3 ('Z 'N) 4 #t 'none] 
 
     ;EOR
-    ['eor 'zpxi #x41 2 () 1 #f 'none] 
-    ['eor 'zp   #x45 2 () 1 #f 'none] 
-    ['eor 'i    #x49 2 () 1 #f 'none] 
-    ['eor 'abs  #x4D 3 () 1 #f 'none] 
-    ['eor 'zpyi #x51 2 () 1 #f 'none] 
-    ['eor 'zpx  #x55 2 () 1 #f 'none] 
-    ['eor 'absy #x59 3 () 1 #f 'none] 
-    ['eor 'absx #x5D 3 () 1 #f 'none] 
+    ['eor 'zpxi #x41 2 ('Z 'N) 6 #f 'none] 
+    ['eor 'zp   #x45 2 ('Z 'N) 3 #f 'none] 
+    ['eor 'i    #x49 2 ('Z 'N) 2 #f 'none] 
+    ['eor 'abs  #x4D 3 ('Z 'N) 4 #f 'none] 
+    ['eor 'zpyi #x51 2 ('Z 'N) 5 #t 'none] 
+    ['eor 'zpx  #x55 2 ('Z 'N) 4 #f 'none] 
+    ['eor 'absy #x59 3 ('Z 'N) 4 #t 'none] 
+    ['eor 'absx #x5D 3 ('Z 'N) 4 #t 'none] 
 
     ;ADC
-    ['adc 'zpxi #x61 2 () 1 #f 'none] 
-    ['adc 'zp   #x65 2 () 1 #f 'none] 
-    ['adc 'i    #x69 2 () 1 #f 'none] 
-    ['adc 'abs  #x6D 3 () 1 #f 'none]     
-    ['adc 'zpyi #x71 2 () 1 #f 'none] 
-    ['adc 'zpx  #x75 2 () 1 #f 'none] 
-    ['adc 'absy #x79 3 () 1 #f 'none] 
-    ['adc 'absx #x7D 3 () 1 #f 'none] 
+    ['adc 'zpxi #x61 2 ('C 'Z 'N) 6 #f 'none] 
+    ['adc 'zp   #x65 2 ('C 'Z 'N) 3 #f 'none] 
+    ['adc 'i    #x69 2 ('C 'Z 'N) 2 #f 'none] 
+    ['adc 'abs  #x6D 3 ('C 'Z 'N) 4 #f 'none]     
+    ['adc 'zpyi #x71 2 ('C 'Z 'N) 5 #t 'none] 
+    ['adc 'zpx  #x75 2 ('C 'Z 'N) 4 #f 'none] 
+    ['adc 'absy #x79 3 ('C 'Z 'N) 4 #t 'none] 
+    ['adc 'absx #x7D 3 ('C 'Z 'N) 4 #t 'none] 
 
     ;STA
-    ['sta 'zpxi #x81 2 () 1 #f 'none] 
-    ['sta 'zp   #x85 2 () 1 #f 'none] 
-    ['sta 'abs  #x8D 3 () 1 #f 'none] 
-    ['sta 'zpyi #x91 2 () 1 #f 'none] 
-    ['sta 'zpx  #x95 2 () 1 #f 'none] 
-    ['sta 'absy #x99 3 () 1 #f 'none] 
-    ['sta 'absx #x9D 3 () 1 #f 'none] 
+    ['sta 'zpxi #x81 2 () 6 #f 'none] 
+    ['sta 'zp   #x85 2 () 3 #f 'none] 
+    ['sta 'abs  #x8D 3 () 4 #f 'none] 
+    ['sta 'zpyi #x91 2 () 6 #f 'none] 
+    ['sta 'zpx  #x95 2 () 4 #f 'none] 
+    ['sta 'absy #x99 3 () 5 #f 'none] 
+    ['sta 'absx #x9D 3 () 5 #f 'none] 
 
     ;LDA
-    ['lda 'zpxi #xA1 2 () 1 #f 'none] 
-    ['lda 'zp   #xA5 2 () 1 #f 'none] 
-    ['lda 'i    #xA9 2 () 1 #f 'none] 
-    ['lda 'abs  #xAD 3 () 1 #f 'none] 
-    ['lda 'zpyi #xB1 2 () 1 #f 'none] 
-    ['lda 'zpx  #xB5 2 () 1 #f 'none] 
-    ['lda 'absy #xB9 3 () 1 #f 'none] 
-    ['lda 'absx #xBD 3 () 1 #f 'none] 
+    ['lda 'zpxi #xA1 2 ('Z 'N) 6 #f 'none] 
+    ['lda 'zp   #xA5 2 ('Z 'N) 3 #f 'none] 
+    ['lda 'i    #xA9 2 ('Z 'N) 2 #f 'none] 
+    ['lda 'abs  #xAD 3 ('Z 'N) 4 #f 'none] 
+    ['lda 'zpyi #xB1 2 ('Z 'N) 5 #t 'none] 
+    ['lda 'zpx  #xB5 2 ('Z 'N) 4 #f 'none] 
+    ['lda 'absy #xB9 3 ('Z 'N) 4 #t 'none] 
+    ['lda 'absx #xBD 3 ('Z 'N) 4 #t 'none] 
 
     ;CMP
-    ['cmp 'zpxi #xC1 2 () 1 #f 'none] 
-    ['cmp 'zp   #xC5 2 () 1 #f 'none] 
-    ['cmp 'i    #xC9 2 () 1 #f 'none] 
-    ['cmp 'abs  #xCD 3 () 1 #f 'none] 
-    ['cmp 'zpyi #xD1 2 () 1 #f 'none] 
-    ['cmp 'zpx  #xD5 2 () 1 #f 'none] 
-    ['cmp 'absy #xD9 3 () 1 #f 'none] 
-    ['cmp 'absx #xDD 3 () 1 #f 'none] 
+    ['cmp 'zpxi #xC1 2 ('C 'Z 'N) 6 #f 'none] 
+    ['cmp 'zp   #xC5 2 ('C 'Z 'N) 3 #f 'none] 
+    ['cmp 'i    #xC9 2 ('C 'Z 'N) 2 #f 'none] 
+    ['cmp 'abs  #xCD 3 ('C 'Z 'N) 4 #f 'none] 
+    ['cmp 'zpyi #xD1 2 ('C 'Z 'N) 5 #t 'none] 
+    ['cmp 'zpx  #xD5 2 ('C 'Z 'N) 4 #f 'none] 
+    ['cmp 'absy #xD9 3 ('C 'Z 'N) 4 #t 'none] 
+    ['cmp 'absx #xDD 3 ('C 'Z 'N) 4 #t 'none] 
 
     ;SBC
-    ['sbc 'zpxi #xE1 2 () 1 #f 'none] 
-    ['sbc 'zp   #xE5 2 () 1 #f 'none] 
-    ['sbc 'i    #xE9 2 () 1 #f 'none] 
-    ['sbc 'abs  #xED 3 () 1 #f 'none] 
-    ['sbc 'zpyi #xF1 2 () 1 #f 'none] 
-    ['sbc 'zpx  #xF5 2 () 1 #f 'none] 
-    ['sbc 'absy #xF9 3 () 1 #f 'none] 
-    ['sbc 'absx #xFD 3 () 1 #f 'none] 
+    ['sbc 'zpxi #xE1 2 ('C 'Z 'V 'N) 6 #f 'none] 
+    ['sbc 'zp   #xE5 2 ('C 'Z 'V 'N) 3 #f 'none] 
+    ['sbc 'i    #xE9 2 ('C 'Z 'V 'N) 2 #f 'none] 
+    ['sbc 'abs  #xED 3 ('C 'Z 'V 'N) 4 #f 'none] 
+    ['sbc 'zpyi #xF1 2 ('C 'Z 'V 'N) 5 #t 'none] 
+    ['sbc 'zpx  #xF5 2 ('C 'Z 'V 'N) 4 #f 'none] 
+    ['sbc 'absy #xF9 3 ('C 'Z 'V 'N) 4 #t 'none] 
+    ['sbc 'absx #xFD 3 ('C 'Z 'V 'N) 4 #t 'none] 
 
     ;ASL
-    ['asl 'zp   #x06 2 () 1 #f 'none] 
-    ['asl 'none #x0A 1 () 1 #f 'none]
-    ['asl 'abs  #x0E 3 () 1 #f 'none] 
-    ['asl 'zpx  #x16 2 () 1 #f 'none] 
-    ['asl 'absx #x1E 3 () 1 #f 'none] 
+    ['asl 'zp   #x06 2 ('C 'Z 'N) 5 #f 'none] 
+    ['asl 'none #x0A 1 ('C 'Z 'N) 2 #f 'none]
+    ['asl 'abs  #x0E 3 ('C 'Z 'N) 6 #f 'none] 
+    ['asl 'zpx  #x16 2 ('C 'Z 'N) 6 #f 'none] 
+    ['asl 'absx #x1E 3 ('C 'Z 'N) 7 #f 'none] 
 
     ;ROL
-    ['rol 'zp   #x26 2 () 1 #f 'none] 
-    ['rol 'none #x2A 1 () 1 #f 'none]
-    ['rol 'abs  #x2E 3 () 1 #f 'none] 
-    ['rol 'zpx  #x36 2 () 1 #f 'none] 
-    ['rol 'absx #x3E 3 () 1 #f 'none] 
+    ['rol 'zp   #x26 2 ('C 'Z 'N) 5 #f 'none] 
+    ['rol 'none #x2A 1 ('C 'Z 'N) 2 #f 'none]
+    ['rol 'abs  #x2E 3 ('C 'Z 'N) 6 #f 'none] 
+    ['rol 'zpx  #x36 2 ('C 'Z 'N) 6 #f 'none] 
+    ['rol 'absx #x3E 3 ('C 'Z 'N) 7 #f 'none] 
 
     ;LSR
-    ['lsr 'zp   #x46 2 () 1 #f 'none] 
-    ['lsr 'none #x4A 1 () 1 #f 'none]
-    ['lsr 'abs  #x4E 3 () 1 #f 'none] 
-    ['lsr 'zpx  #x56 2 () 1 #f 'none] 
-    ['lsr 'absx #x5E 3 () 1 #f 'none] 
+    ['lsr 'zp   #x46 2 ('C 'Z 'N) 5 #f 'none] 
+    ['lsr 'none #x4A 1 ('C 'Z 'N) 2 #f 'none]
+    ['lsr 'abs  #x4E 3 ('C 'Z 'N) 6 #f 'none] 
+    ['lsr 'zpx  #x56 2 ('C 'Z 'N) 6 #f 'none] 
+    ['lsr 'absx #x5E 3 ('C 'Z 'N) 7 #f 'none] 
 
     ;ROR
-    ['ror 'zp   #x66 2 () 1 #f 'none] 
-    ['ror 'none #x6A 1 () 1 #f 'none]
-    ['ror 'abs  #x6E 3 () 1 #f 'none] 
-    ['ror 'zpx  #x76 2 () 1 #f 'none] 
-    ['ror 'absx #x7E 3 () 1 #f 'none] 
+    ['ror 'zp   #x66 2 ('C 'Z 'N) 5 #f 'none] 
+    ['ror 'none #x6A 1 ('C 'Z 'N) 2 #f 'none]
+    ['ror 'abs  #x6E 3 ('C 'Z 'N) 6 #f 'none] 
+    ['ror 'zpx  #x76 2 ('C 'Z 'N) 6 #f 'none] 
+    ['ror 'absx #x7E 3 ('C 'Z 'N) 7 #f 'none] 
 
     ;STX
-    ['stx 'zp   #x86 2 () 1 #f 'none] 
-    ['stx 'abs  #x8E 3 () 1 #f 'none] 
-    ['stx 'zpy  #x96 2 () 1 #f 'none] 
+    ['stx 'zp   #x86 2 () 3 #f 'none] 
+    ['stx 'abs  #x8E 3 () 4 #f 'none] 
+    ['stx 'zpy  #x96 2 () 4 #f 'none] 
 
     ;LDX
-    ['ldx 'i    #xA2 2 () 1 #f 'none] 
-    ['ldx 'zp   #xA6 2 () 1 #f 'none] 
-    ['ldx 'abs  #xAE 3 () 1 #f 'none] 
-    ['ldx 'zpx  #xB6 2 () 1 #f 'none] 
-    ['ldx 'absy #xBE 3 () 1 #f 'none] 
+    ['ldx 'i    #xA2 2 ('Z 'N) 2 #f 'none] 
+    ['ldx 'zp   #xA6 2 ('Z 'N) 3 #f 'none] 
+    ['ldx 'abs  #xAE 3 ('Z 'N) 4 #f 'none] 
+    ['ldx 'zpy  #xB6 2 ('Z 'N) 4 #f 'none] 
+    ['ldx 'absy #xBE 3 ('Z 'N) 3 #f 'none] 
 
     ;DEC
-    ['dec 'zp   #xC6 2 () 1 #f 'none] 
-    ['dec 'abs  #xCE 3 () 1 #f 'none] 
-    ['dec 'zpx  #xD6 2 () 1 #f 'none] 
-    ['dec 'absx #xDE 3 () 1 #f 'none] 
+    ['dec 'zp   #xC6 2 ('Z 'N) 5 #f 'none] 
+    ['dec 'abs  #xCE 3 ('Z 'N) 6 #f 'none] 
+    ['dec 'zpx  #xD6 2 ('Z 'N) 6 #f 'none] 
+    ['dec 'absx #xDE 3 ('Z 'N) 7 #f 'none] 
 
     ;INC
-    ['inc 'zp   #xE6 2 () 1 #f 'none] 
-    ['inc 'abs  #xEE 3 () 1 #f 'none] 
-    ['inc 'zpx  #xF6 2 () 1 #f 'none] 
-    ['inc 'absx #xFE 3 () 1 #f 'none] 
+    ['inc 'zp   #xE6 2 ('Z 'N) 5 #f 'none] 
+    ['inc 'abs  #xEE 3 ('Z 'N) 6 #f 'none] 
+    ['inc 'zpx  #xF6 2 ('Z 'N) 6 #f 'none] 
+    ['inc 'absx #xFE 3 ('Z 'N) 7 #f 'none] 
 
     ;BIT
-    ['bit 'zp   #x24 2 () 1 #f 'none] 
-    ['bit 'abs  #x2C 3 () 1 #f 'none] 
+    ['bit 'zp   #x24 2 ('Z 'V 'N) 3 #f 'none] 
+    ['bit 'abs  #x2C 3 ('Z 'V 'N) 4 #f 'none] 
 
     ;STY
-    ['sty 'zp   #x84 2 () 1 #f 'none] 
-    ['sty 'abs  #x8C 3 () 1 #f 'none] 
-    ['sty 'zpx  #x94 2 () 1 #f 'none] 
+    ['sty 'zp   #x84 2 () 3 #f 'none] 
+    ['sty 'abs  #x8C 3 () 4 #f 'none] 
+    ['sty 'zpx  #x94 2 () 4 #f 'none] 
 
     ;LDY
-    ['ldy 'i    #xA0 2 () 1 #f 'none] 
-    ['ldy 'zp   #xA4 2 () 1 #f 'none] 
-    ['ldy 'abs  #xAC 3 () 1 #f 'none] 
-    ['ldy 'zpx  #xB4 2 () 1 #f 'none] 
-    ['ldy 'absx #xBC 3 () 1 #f 'none] 
+    ['ldy 'i    #xA0 2 ('Z 'N) 2 #f 'none] 
+    ['ldy 'zp   #xA4 2 ('Z 'N) 3 #f 'none] 
+    ['ldy 'abs  #xAC 3 ('Z 'N) 4 #f 'none] 
+    ['ldy 'zpx  #xB4 2 ('Z 'N) 4 #f 'none] 
+    ['ldy 'absx #xBC 3 ('Z 'N) 4 #t 'none] 
 
     ;CPY
-    ['cpy 'i    #xC0 2 () 1 #f 'none] 
-    ['cpy 'zp   #xC4 2 () 1 #f 'none] 
-    ['cpy 'abs  #xCC 3 () 1 #f 'none] 
+    ['cpy 'i    #xC0 2 ('C 'Z 'N) 2 #f 'none] 
+    ['cpy 'zp   #xC4 2 ('C 'Z 'N) 3 #f 'none] 
+    ['cpy 'abs  #xCC 3 ('C 'Z 'N) 4 #f 'none] 
 
     ;CPX
-    ['cpx 'i    #xE0 2 () 1 #f 'none] 
-    ['cpx 'zp   #xE4 2 () 1 #f 'none] 
-    ['cpx 'abs  #xEC 3 () 1 #f 'none] 
+    ['cpx 'i    #xE0 2 ('C 'Z 'N) 2 #f 'none] 
+    ['cpx 'zp   #xE4 2 ('C 'Z 'N) 3 #f 'none] 
+    ['cpx 'abs  #xEC 3 ('C 'Z 'N) 4 #f 'none] 
 
     ;JMP / JSR
-    ['jmp 'jmpi #x6C 3 () 1 #f 'jump]
-    ['jmp 'abs  #x4C 3 () 1 #f 'jump]
-    ['jsr 'abs  #x20 3 () 1 #f 'none]
+    ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
+    ['jmp 'abs  #x4C 3 () 3 #f 'jump]
+    ['jsr 'abs  #x20 3 () 6 #f 'none]
     
     ;Branches
     ;these are actually "relative" addressing mode,
     ;but that is not a thing in asi64. You must give it
     ;either a label or a 16 bit address and it works out
     ;the relative addressing - hence the ;'abs for these.
-    ['bpl 'abs #x10 2 () 1 #f 'branch] 
-    ['bmi 'abs #x30 2 () 1 #f 'branch]
-    ['bvc 'abs #x50 2 () 1 #f 'branch]
-    ['bvs 'abs #x70 2 () 1 #f 'branch]
-    ['bcc 'abs #x90 2 () 1 #f 'branch]
-    ['bcs 'abs #xB0 2 () 1 #f 'branch]
-    ['bne 'abs #xD0 2 () 1 #f 'branch]
-    ['beq 'abs #xF0 2 () 1 #f 'branch]
+    ['bpl 'abs #x10 2 () 2 #t 'branch] 
+    ['bmi 'abs #x30 2 () 2 #t 'branch]
+    ['bvc 'abs #x50 2 () 2 #t 'branch]
+    ['bvs 'abs #x70 2 () 2 #t 'branch]
+    ['bcc 'abs #x90 2 () 2 #t 'branch]
+    ['bcs 'abs #xB0 2 () 2 #t 'branch]
+    ['bne 'abs #xD0 2 () 2 #t 'branch]
+    ['beq 'abs #xF0 2 () 2 #t 'branch]
 
     ;Everything else
-    ['rti 'none #x40 1 () 1 #f 'none]
-    ['rts 'none #x60 1 () 1 #f 'none]
-    ['php 'none #x08 1 () 1 #f 'none]
-    ['plp 'none #x28 1 () 1 #f 'none]
-    ['pha 'none #x48 1 () 1 #f 'none]
-    ['pla 'none #x68 1 () 1 #f 'none]
-    ['dey 'none #x88 1 () 1 #f 'none]
-    ['tay 'none #xA8 1 () 1 #f 'none]
-    ['iny 'none #xC8 1 () 1 #f 'none]
-    ['inx 'none #xE8 1 () 1 #f 'none]
-    ['clc 'none #x18 1 () 1 #f 'none]
-    ['sec 'none #x38 1 () 1 #f 'none]
-    ['cli 'none #x58 1 () 1 #f 'none]
-    ['sei 'none #x78 1 () 1 #f 'none]
-    ['tya 'none #x98 1 () 1 #f 'none]
-    ['clv 'none #xB8 1 () 1 #f 'none]
-    ['cld 'none #xD8 1 () 1 #f 'none]
-    ['sed 'none #xF8 1 () 1 #f 'none]
-    ['txa 'none #x8A 1 () 1 #f 'none]
-    ['txs 'none #x9A 1 () 1 #f 'none]
-    ['tax 'none #xAA 1 () 1 #f 'none]
-    ['tsx 'none #xBA 1 () 1 #f 'none]
-    ['dex 'none #xCA 1 () 1 #f 'none]
-    ['nop 'none #xEA 1 () 1 #f 'none])))
+    ['rti 'none #x40 1 ()      6 #f 'none]
+    ['rts 'none #x60 1 ()      6 #f 'none]
+    ['php 'none #x08 1 ()      3 #f 'none]
+    ['plp 'none #x28 1 ()      4 #f 'none]
+    ['pha 'none #x48 1 ()      3 #f 'none]
+    ['pla 'none #x68 1 ()      4 #f 'none]
+    ['dey 'none #x88 1 ('Z 'N) 2 #f 'none]
+    ['tay 'none #xA8 1 ('Z 'N) 2 #f 'none]
+    ['iny 'none #xC8 1 ('Z 'N) 2 #f 'none]
+    ['inx 'none #xE8 1 ('Z 'N) 2 #f 'none]
+    ['clc 'none #x18 1 ('C)    2 #f 'none]
+    ['sec 'none #x38 1 ('C)    2 #f 'none]
+    ['cli 'none #x58 1 ('I)    2 #f 'none]
+    ['sei 'none #x78 1 ('I)    2 #f 'none]
+    ['tya 'none #x98 1 ('Z 'N) 2 #f 'none]
+    ['clv 'none #xB8 1 ('V)    2 #f 'none]
+    ['cld 'none #xD8 1 ('D)    2 #f 'none]
+    ['sed 'none #xF8 1 ('D)    2 #f 'none]
+    ['txa 'none #x8A 1 ('Z 'N) 2 #f 'none]
+    ['txs 'none #x9A 1 ()      2 #f 'none]
+    ['tax 'none #xAA 1 ('Z 'N) 2 #f 'none]
+    ['tsx 'none #xBA 1 ()      2 #f 'none]
+    ['dex 'none #xCA 1 ('Z 'N) 2 #f 'none]
+    ['nop 'none #xEA 1 ()      2 #f 'none])))
 
 
 (define (to-bytes input)
@@ -299,6 +304,40 @@
        [(list 'none 2 (8bit op))  (list v op)]
        [(list 'none 3 (16bit op)) (list v op)]
        [(list tt _ op)            (list v (transition tt op))])))
+
+(define (update-diagnostics input)
+  (match-let* ([(list opcode a-mode operand) input]
+               [(metadata _ _ _ s f c pp _)                 
+                (hash-ref opcode-metadata (cons opcode a-mode))])
+    (set-metrics-code-size!
+     current-metrics
+     (+ (metrics-code-size current-metrics) s))   
+
+    (set-metrics-min-cycles!
+     current-metrics
+     (+ (metrics-min-cycles current-metrics) c))   
+
+    (set-metrics-max-cycles!
+     current-metrics
+     (+ (metrics-max-cycles current-metrics)
+        (if (eq? pp #t) (+ c 1) c)))
+
+    (printf "~a ~a ~a ~a\n"
+            (~a (symbol->string opcode)
+                #:separator " "
+                #:min-width 6
+                #:align 'left)
+            (~a (symbol->string a-mode)
+                #:separator " "
+                #:min-width 6
+                #:align 'left)
+            (~a (if (eq? pp #t)
+                    (format "~a/~a" c (+ c 1)) c)
+                #:separator " "
+                #:min-width 6
+                #:align 'left)
+            (~a f))))
+       
 
 (define (infer-addressing-mode value is-immediate is-indirect register)
   (wdb "infer addressing mode ~a ~a ~a ~a" value is-immediate is-indirect register)
@@ -478,7 +517,7 @@
 (define (process-line inputs)
   (match-let ([(list source-label source-label2 opcode target indirect immediate register) inputs])
     (begin
-      (wdb "process-line ~a ~a ~a ~a ~a ~a" source-label opcode target indirect immediate register)
+      (wdb "process-line ~a ~a ~a ~a ~a ~a" source-label opcode target indirect immediate register)      
       (let ([addressing-mode (infer-addressing-mode target immediate indirect register)])
         ; special case here to check for the 6502 bug where you can't use an indirect jump
         ; at the end of a page.
@@ -487,6 +526,12 @@
                    (number? target)
                    (eq? (lo-byte target) 255))
           (writeln (format "warning: indirect jump target on page boundary at $~x!" (here))))
+
+        (when (and
+               (eq? (unbox diagnostics-enabled?) #t)
+               (not (eq? opcode 'break)))
+          (update-diagnostics (list opcode addressing-mode target)))
+        
         (if (eq? opcode 'break) ;special "opcode" for emu breakpoints
             (set-add! (context-breakpoints prog) (context-location prog))
             (to-bytes (list opcode addressing-mode target)))))))
@@ -561,6 +606,25 @@
     (pattern (~or (~literal x) (~literal y))))
 
   (syntax-parse stx #:datum-literals (=)
+    [(_ (~literal ?=) )
+     #'(begin
+         (printf "diagnostics started at $~x\n" (here))
+         (printf "opcode a-mode cycles flags\n")         
+         (set-box! diagnostics-enabled? #t)
+         (set-metrics-code-size! current-metrics 0)
+         (set-metrics-min-cycles! current-metrics 0)
+         (set-metrics-max-cycles! current-metrics 0))
+     ]
+    [(_ (~literal =?))
+     #'(begin
+         (set-box! diagnostics-enabled? #f)
+         (printf "diagnostics finished at $~x\n" (here))
+         (printf "total code size $~x (~a).  min/max cycles (~a/~a)\n"
+                 (metrics-code-size current-metrics)
+                 (metrics-code-size current-metrics)
+                 (metrics-min-cycles current-metrics)
+                 (metrics-max-cycles current-metrics))
+         )]    
     [(_ label:label)
      #'(try-set-jump-source `label set-jump-source-current)]
     [(_ label:label e:expr)
