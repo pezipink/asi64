@@ -279,6 +279,23 @@ total code size $15 (21).  min/max cycles (36/38)
 
 Note that since you can put numbers and data anywhere, asi64 can only show you information about code assembled directly with the assembler syntax.  If you put a `(data ...)` block in the middle of the code, the diagnostics will simply ignore it, even if the bytes equate to valid opcode(s).
 
+
+### Metaprogramming helpers
+
+When you want to write code that writes other code, asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require. For example :
+
+'''racket
+{
+   lda @(infer sta £ $ff y)
+}
+
+```
+
+This code will load the accumulator with the immediate value of `$91`, the byte that represents the `sta` opcode in its indirect, y-offset addressing mode.  
+Of course, the actual address `$ff` here makes no difference, it is simply used to infer the addressing mode.  If you had wrote `$ffff` it would have produced an error since the `sta` indirect addressing modes do not work with 16 bit addresses. 
+Unlike the rest of the assembler, you cannot use labels, expressions and other features within the `infer` macro, since it would make no sense to do so.
+
+
 ### Programming the assembler internals
 
 Full access to the assembler itself is exposed allowing you to insepct and modify it at will

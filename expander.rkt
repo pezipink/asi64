@@ -3,18 +3,18 @@
 
 #lang racket
 
-(require (for-syntax syntax/parse))
-(require (for-syntax racket/string))
-(require (for-syntax racket/base))
-(require (for-syntax racket/match))
-(require (for-syntax racket/syntax))
-(require (for-syntax racket/list))
+(require (for-syntax syntax/parse
+                     racket/string
+                     racket/base
+                     racket/match
+                     racket/syntax
+                     racket/list))
+
 (define is-debug #f)
 
-(define diagnostics-enabled? (box #f))
 (struct metrics (min-cycles max-cycles code-size) #:mutable)
 (define current-metrics (metrics 0 0 0))
-
+(define diagnostics-enabled? (box #f))
 
 (define-syntax (wdb stx)  
   (syntax-parse stx
@@ -66,7 +66,7 @@
                   page-penalty?   ; +1 cycle if crossing page?
                   transition-type ; 'none 'branch or 'jump
                   ) #:transparent)
-
+         
 (define-syntax (create-opcode-metadata stx)
   (syntax-parse stx
     [(_ ([opcode
@@ -252,6 +252,12 @@
     ;JMP / JSR
     ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
     ['jmp 'abs  #x4C 3 () 3 #f 'jump]
+    ['jsr 'abs  #x20 3 () 6 #f 'none]
+
+    ; these two are not really "zero page"
+    ; we just write them out as 16 bit addresses
+    ; like the normal jumps
+    ['jmp 'zp   #x4C 3 () 3 #f 'jump]
     ['jsr 'abs  #x20 3 () 6 #f 'none]
     
     ;Branches
@@ -763,6 +769,31 @@
   (syntax-parse stx
     [(_ (#:immediate _) true-branch false-branch) #'true-branch]
     [(_ _ true-branch false-branch) #'false-branch]))
+
+(define-syntax (infer stx)
+  (define-syntax-class immediate
+    (pattern #:immediate))
+  (define-syntax-class indirect
+    (pattern #:indirect))
+  (define-syntax-class register
+    (pattern (~or (~literal x) (~literal y))))
+  (syntax-parse stx
+    [(_ 
+       oc:id
+       (~optional ind:indirect #:defaults ([ind #'#f]))
+       (~optional imm:immediate #:defaults ([imm #'#f]))
+       (~optional targ:number #:defaults ([targ #'#f]))
+       (~optional reg:register #:defaults ([reg #'#f])))
+     #'(match-let*
+           ([a-mode (infer-addressing-mode
+                     targ
+                     (equal? `#:immediate `imm)
+                     (equal? `#:indirect `ind)
+                     `reg)]
+            [(metadata _ _ v s _ _ _ _)                 
+             (hash-ref opcode-metadata (cons `oc a-mode))])
+         v)]))
+
 
 (define-syntax (C64 stx)
   (syntax-parse stx
