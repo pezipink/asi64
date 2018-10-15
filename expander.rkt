@@ -850,15 +850,18 @@
                     (context-breakpoints prog)
                     (λ (loc)
                       (write-string (format "break ~a\n" (number->string loc 16)) out))))
-                 (when (emulator-labels? emu)                   
+
+                 (when (emulator-labels? emu)
                    (hash-for-each
                     (context-jump-table prog)
                     (λ (k dests)
-                      (begin
-                        (for ([dest dests])
-                          (write-string (format "al ~a .~a\n" (number->string dest 16) k) out)))))
+                      (for ([dest (reverse dests)]
+                            [i (in-naturals)])
+                        (if (eq? i 0)
+                            (write-string (format "al ~a .~a\n" (number->string dest 16) k) out)
+                            (write-string (format "al ~a .~a__~a\n" (number->string dest 16) k i) out))))))
                    (close-output-port out))
-                 (execute-vice)))))]))
+                 (execute-vice))))]))
   
 
 (provide (all-defined-out))
