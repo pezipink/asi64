@@ -42,7 +42,7 @@ I tried to keep as close to normal 6502 asm as possible, however since this exte
 * Binary literals can contain any amount of `_` characters.
 * `@` is used for immediate addressing mode. The traditional `lda #42` is written as `lda @42`
 * Indexed addressing modes are the same, but without a comma.  `sta $0400,x` becomes `sta $0400 x`
-* Indirect addressing modes I had to butcher a bit, since the traditional parens would have messed everything up.  Currently, it is denoted by the `£` character, as it is the only one I could find that isn't used for something in racket already.  Therefore,  `sta ($0400),y` becomes `sta £ $0400 y` and `jmp ($4000)` becomes `jmp £ $4000`
+* Indirect addressing modes I had to butcher a bit, since the traditional parens would have messed everything up.  Currently, it is denoted by the `Â£` character, as it is the only one I could find that isn't used for something in racket already.  Therefore,  `sta ($0400),y` becomes `sta Â£ $0400 y` and `jmp ($4000)` becomes `jmp Â£ $4000`
 * `/=` aligns the assembler to the next memory location evenly divisble by the value supplied
 * `?=` and `=?` switch on and off compile time diagnostics.  See the Diagnostics section below for more information.
 
@@ -284,9 +284,9 @@ Note that since you can put numbers and data anywhere, asi64 can only show you i
 
 When you want to write code that writes other code, asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require. For example :
 
-'''racket
+```racket
 {
-   lda @(infer sta � $ff y)
+   lda @(infer sta £ $ff y)
 }
 
 ```
