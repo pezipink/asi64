@@ -292,7 +292,9 @@ When you want to write code that writes other code, asi64 has a macro that helps
 ```
 
 This code will load the accumulator with the immediate value of `$91`, the byte that represents the `sta` opcode in its indirect, y-offset addressing mode.  
+
 Of course, the actual address `$ff` here makes no difference, it is simply used to infer the addressing mode.  If you had wrote `$ffff` it would have produced an error since the `sta` indirect addressing modes do not work with 16 bit addresses. 
+
 Unlike the rest of the assembler, you cannot use labels, expressions and other features within the `infer` macro, since it would make no sense to do so.
 
 
