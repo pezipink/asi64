@@ -1,7 +1,7 @@
 #lang asi64
 (require (for-syntax syntax/parse))
 (set-emulator-program! emu "c64.prg")
-(set-emulator-execute?! emu #t)
+(set-emulator-execute?! emu #f)
 (set-emulator-breakpoints?! emu #t) ;bps
 (set-emulator-path! emu "C:\\Program Files\\WinVICE-3.0-x64\\x64.exe")
 
