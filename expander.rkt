@@ -515,19 +515,21 @@
 
 (define (write-values exprs)
   (for ([e (flatten exprs)])
-    (match e
-      [(transition 'branch label)
-       (if (number? label)
-           (write-value (lo-byte (-  label (context-location prog))))
-           (write-transition-target #t label add-branch-dest))]
-      [(transition 'jump label)
-       (if (number? label)
-           (begin
-             (write-value (lo-byte label))
-             (write-value (hi-byte label)))             
-           (write-transition-target #f label add-jump-dest))]
-      [_
-       (write-value e)])))
+    (if (list? e)
+        (write-values e)
+        (match e
+          [(transition 'branch label)
+           (if (number? label)
+               (write-value (lo-byte (-  label (context-location prog))))
+               (write-transition-target #t label add-branch-dest))]
+          [(transition 'jump label)
+           (if (number? label)
+               (begin
+                 (write-value (lo-byte label))
+                 (write-value (hi-byte label)))             
+               (write-transition-target #f label add-jump-dest))]
+          [_
+           (write-value e)]))))
 
 
 (define (process-line inputs)
@@ -644,8 +646,6 @@
      #'(try-set-jump-source `label set-jump-source-current)]
     [(_ label:label e:expr)
      #'(begin (try-set-jump-source `label set-jump-source-current) e) ]
-    [(_ v:identifier = e:expr)
-     #'(define v e)]
     [(_ (~seq
          (~optional label:label #:defaults ([label #'#f]))
          oc:id
@@ -660,6 +660,8 @@
           (equal? `#:immediate `imm)
           (equal? `#:indirect `ind)
           reg))]
+    [(_ v:identifier = e:expr)
+     #'(define v e)]
         
     [(_ e:expr ... ) #'(begin e ...) ]
     [(_ e ) #'e] ))

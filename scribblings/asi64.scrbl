@@ -12,11 +12,11 @@ The Racket based cross-platform 6502  assembler.  Primarily aimed at programming
 
 @section[#:tag "overview"]{Asi64 Overview}
 
-The overall philosophy of this project is to take an old idea (a 6502 macro assembler) and supercharge it with Racket's macro system.  The end result is a powerful combination of part assembler, part meta-programming language that lets you combine all the power of racket with a raw but feature-rich assembler.
+The overall philosophy of this project is to take an old idea (a 6502 macro assembler) and supercharge it with Racket's macro system.  The end result is a powerful combination of part assembler, part meta-programming language that lets you combine all the power of Racket with a raw but feature-rich assembler.
 
-Since Racket is designed for exactly this kind of venture, it is also quite easy to change, extend, or even build new languages over the top of it.
+Since Racket embraces this manner of design, it is quite easy to change, extend, or even build new languages over the top of it.
 
-The assembler is primarily aimed at programming the Commodore 64, and includes support for the emulator VICE. It is able to launch the emulator post-compilation, passing along both your breakpoints and labels leading a fast development cycle.
+The assembler is primarily aimed at programming the Commodore 64, and includes support for the emulator @hyperlink["http://vice-emu.sourceforge.net/"]{VICE}. It is able to launch the emulator post-compilation, passing along both your breakpoints and labels, resulting in a fast development cycle.
 
 An assembler is a powerful low-level tool. An overall choice was made to expose all (or almost all) of the internals of the assembler to the programmer.  The special assembler syntax provided is, afterall, simply a wrapper around the underlying library, consisting of some macros, functions and read-table modifications.  The programmer is able to inspect and modify the assembler internals as they please. This can make it easier to write complex macros that directly program the internals without having to jump through hoops using the provided layers of syntax.
 
@@ -24,7 +24,7 @@ The code can be found at the @hyperlink["https://github.com/pezipink/asi64"]{git
 
 @section{Getting Started}
 
-You can find asi64 on Racket's package manager. @tt{raco pkg install asi64} should get you setup and ready to go. Create a racket file somewhere for your program, and have VICE installed and ready to go.  
+You can find asi64 on Racket's package manager. @tt{raco pkg install asi64} should get you setup and ready to go. Create a Racket file somewhere for your program, and have @hyperlink["http://vice-emu.sourceforge.net/"]{VICE} installed and ready to go.  
 @defmodulelang[asi64]
 
 @#reader scribble/comment-reader
@@ -46,25 +46,25 @@ code:blank
 })
 )
 
-The first few lines tell the assembler where to create the output file, whether to start the emulator post-assembly, and the location of the emulator itself.  You can learn more about emuator specific options in the related section.
+The first few lines tell the assembler where to create the output file, whether to start the emulator post-assembly, and the location of the emulator itself.  See @secref{emulator configuration} for more information.
 
-An Asi64 program must contain a single core form @tt{C64}.  Within this form is expected to be a single 6502 block, denoted by @tt{ { }}.
+An asi64 program must contain a single core form @tt{C64}.  Within this form is expected to be a single 6502 block, denoted by @tt{ { }}.
 
-If you compile this program, it should assemble the resulting file and start the emulator with it for you to enjoy (hopefully!.)
+If you compile this program, it should assemble the resulting file and start the emulator with it for you to enjoy (hopefully!)
 
 @section{Core Assembler Syntax}
 
 @subsection{General}
 
-Asi64 tries to stay as close to traditional 6502 assembler as possible, but a few tradeoffs had to be made to ensure all of Racket is still available.
+Asi64 tries to stay as close to traditional 6502 assembler as possible. However, a few changes had to be made to ensure all of Racket is available.
 
-You can write 6502 assembler code anywhere between @tt{{ }}.  These blocks can be mixed and nested arbitrarily with other Racket forms - see Racket Integration for more infromation.
+You can write 6502 assembler code anywhere between @tt{{ }}.  These blocks can be mixed and nested arbitrarily with other Racket forms - see @secref{racket integration} for more infromation.
 
-Within the 6502 blocks, each opcode must appear on its own line.  Operands can be formed of literals or Racket expressions, and labels can appear in a variety of places, see the labels section for more information.
+Within the 6502 blocks, each opcode must appear on its own line.  Operands can be formed of literals or Racket expressions, and labels can appear in a variety of places, see the @secref{labels} section for more information.
 
 @subsection{Number Literals}
 
-Asi64 provides hexadecimal @tt{$} and binary @tt{%} literals, which  can be used everywhere in an Asi64 program, not just within 6502 blocks.
+Asi64 provides hexadecimal @tt{$} and binary @tt{%} literals, which  can be used everywhere in an asi64 program, not just within 6502 blocks.
 
 @#reader scribble/comment-reader
 (racketblock
@@ -80,7 +80,7 @@ Binary literals are able to have any amount of underscore characters within them
 
 @subsection{Addressing Modes}
 
-Immediate addressing mode is traditionally @tt{#}.  Since @tt{#} is already used for things in racket, Asi64 instead uses @tt{@literal|{@}|}.  Therefore, @tt{lda #42} becomes @tt{lda @literal|{@}|42}
+Immediate addressing mode is traditionally @tt{#}.  Since @tt{#} is already used for things in Racket, asi64 instead uses @tt{@literal|{@}|}.  Therefore, @tt{lda #42} becomes @tt{lda @literal|{@}|42}
 
 Indexed adrressing modes are almost the same, removing the comma.  @tt{sta $2000,x}  becomes @tt{sta $2000 x}.
 
@@ -124,17 +124,19 @@ code:blank
 
 Asi64 will warn you if it assembles over the top of a memory location it has previously written to.
 
-@section{Labels}
+@section[#:tag "labels"]{Labels}
 
 @subsection{General}
 
 Labels in Asi64 must always start with @tt{:}
 
-When using a label as a target, omit the leading @tt{:} and suffix with @tt{:}, @tt{@literal|{+}|} or @tt{@literal|{-}|}.  The last two will look ahead or behind the current memory location and use the first label with the given name that is found.  This allows you to have many labels with the same name.
+When using a label as a target, omit the leading @tt{:} and suffix with @tt{:} @tt{@literal|{+}|} or @tt{@literal|{-}|}.  The latter two will look ahead or behind the current memory location and use the first label that is found with the given name.  This allows you to have many labels with the same name.
 
-The assembler will uniquely number any labels with the same name before passing them to the emulator, to ensure they always appear in the disassembly.  If you suffix the label with @tt{:}, the assembler will warn you if more than one label exists with that name.
+The assembler will uniquely number any labels with the same name before passing them to the emulator, to ensure they always appear in the disassembly.
 
-Labels can appear in most places, including before raw data and even operands.
+If instead you suffix the label target with @tt{:}, the assembler will warn if more than one label exists with that name.
+
+Labels can appear in most places, including before raw data and operands.
 
 The following example shows various absolute labels including an operand label that enables simple self-modifying code
 
@@ -219,9 +221,9 @@ code:blank
 }
 )
 
-@section{Racket Integration}
+@section[#:tag "racket integration"]{Racket Integration}
 
-Even inside { } blocks, you still have all of racket. As long as the code ends up being something the assembler expects, you can write whatever you like.  You can also write functions that return 6502 blocks in the manner you would expect.
+Even inside { } blocks, you still have all of Racket. As long as the code ends up being something the assembler expects, you can write whatever you like.  You can also write functions that return ('inline') 6502 blocks in the manner you would expect.
 @#reader scribble/comment-reader
 (racketblock
 
@@ -241,7 +243,7 @@ code:blank
 })
 )
 
-6502 blocks can also be nested inside of each other, enabling you to mix arbitary racket and 6502 forms wherever you like in the manner you would expect.
+6502 blocks can also be nested inside of each other, enabling you to mix arbitary Racket and 6502 forms wherever you like in the manner you would expect.
 
 @#reader scribble/comment-reader
 (racketblock
@@ -279,10 +281,10 @@ code:blank
 )
 
 The macro also introduces a few values for you to use that give metadata about the parameters. Currently you can use
-
-* param-name-16bit? True if the operand is a 16 bit immediate value or 16-bit memory address
-
-* param-name-immediate? True if the parameter is immediate.
+@itemlist[
+ @item{param-name-16bit? True if the operand is a 16 bit immediate value or 16-bit memory address}
+@item{param-name-immediate? True if the parameter is immediate.}
+]
 
 These let you do some cool things such as writing general operations that are intelligent about their operands. Example:
 @#reader scribble/comment-reader
@@ -314,13 +316,26 @@ code:blank
 
 This example could be better, it doesn't deal with 8 bit to 16 bit memory locations.
 
-You might notice some other handy functions being used here. @tt{(lo-byte)} @tt{(high-byte)} and @tt{(here)}. The latter will yield the current instruction location and is handy for infinte loops, skipping instructions and self-modifing code, without having to use labels.
+You might notice some other handy functions being used here - @tt{(lo-byte)} @tt{(high-byte)} and @tt{(here)}. The latter will yield the current instruction location and is handy for infinte loops, skipping instructions and self-modifing code, without having to use labels.
 
 Pseudo-ops can sometimes be nested in each other. (working on this!)
 
 @section{Data}
 
+To insert blocks of arbitrary binary data, use the @tt{(data ...)} macro.   It accepts any number of arguments which it will write directly as bytes.  If an argument is a Racket @racket[list], it will be recusrively unwrapped and its ultimate contents written to memory.
 
+@racketblock[
+{
+  (define (deg->rad rad)
+    (* (/ pi 180) rad))
+
+:sine
+  (data
+    (for/list ([x (in-range 0 365 5)])
+      (bitwise-and (exact-round (* (sin (deg->rad x)) 100)) #xFF)))
+
+code:blank
+}]
 
 @section{Code Diagnostics}
 
@@ -371,29 +386,65 @@ diagnostics finished at $3101
 total code size $15 (21)  min/max cycles (36/38)
 }
 
-Note that since you can put numbers and data anywhere, Asi64 can only show you information about code assembled directly with the assembler syntax. If you put a @tt{(data ...)} block in the middle of the code, the diagnostics will simply ignore it, even if the bytes equate to valid opcode(s).
+Note that since you can put numbers and data anywhere, asi64 can only show you information about code assembled directly with the assembler syntax. If you put a @tt{(data ...)} block in the middle of the code, the diagnostics will simply ignore it, even if the bytes equate to valid opcode(s).
 
 @section{Metaprogramming Helpers}
 
-When you want to write code that writes other code, Asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require. For example :
+When you want to write code that writes other code, asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require. For example :
+
 @#reader scribble/comment-reader
 (racketblock
 {
-   lda @(infer sta £ $ff y)
+   lda \@(infer sta £ $ff y)
 code:blank
 }
 )
 
-This code will load the accumulator with the immediate value of @tt{$91}, the byte that represents the sta opcode in its indirect, y-offset addressing mode.
+This code will load the accumulator with the immediate value of @tt{$91}, the byte that represents the @tt{sta} opcode in its indirect, y-offset addressing mode.
 
-Of course, the actual address $ff here makes no difference, it is simply used to infer the addressing mode. If you had wrote @tt{$ffff} it would have produced an error since the sta indirect addressing modes do not work with 16 bit addresses.
+Of course, the actual address @tt{$ff} here makes no difference, it is simply used to infer the addressing mode. If you had wrote @tt{$ffff} it would have produced an error since the sta indirect addressing modes do not work with 16 bit addresses.
 
 Unlike the rest of the assembler, you cannot use labels, expressions and other features within the infer macro, since it would make no sense to do so.
 
-@section{Emulator Configuration}
+@section[#:tag "emulator configuration"]{Emulator Configuration}
 
+Emulator conifguration is achieved by setting fields of a struct that is exposed directly to the programmer.
+
+@#reader scribble/comment-reader
+(racketblock
+(struct emulator
+  (path           ; location of the emu executable
+   program        ; assembled file target path
+   breakpoints?   ; pass along breakpoints
+   labels?        ; pass along labels
+   execute?)      ; execute the emu post assembly
+  #:mutable)
+)
+
+An instance of this struct @tt{emu} is exposed and the programmer can set the fields in the typical Racket style.
+
+@#reader scribble/comment-reader
+(racketblock
+  (set-emulator-execute?! emu #f) ; stop the emulator executing 
+)
+
+It can be useful to prevent the emulator executing after every assemble when working on long pieces of code or using the diagnostics facility to cycle count.
+
+Note that the @tt{program} field is not strictly associated with the emulator.  It is included here since it seems unlikely you would want to use asi64 without an emulator.  In the future, if asi64 is expanded to support other emulators, machines and same-family chips (NES, GameBoy, SNES ... ) this minimal design will likely change to something slightly more abstract.
+
+An additional convenience function is provided that sets all the fields in one call.
+
+@#reader scribble/comment-reader
+(racketblock
+(define (configure-emu emu-path program-path execute-emu? enable-breakpoints?)
+  (set-emulator-program! emu program-path)
+  (set-emulator-execute?! emu execute-emu?)
+  (set-emulator-breakpoints?! emu enable-breakpoints?)
+  (set-emulator-path! emu emu-path))
+  (set-emulator-execute? emu #f)
+)
 
 
 @section{Interesting Examples}
 
-
+Coming Soon!
