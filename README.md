@@ -1,4 +1,4 @@
-[![raco pkg install asi64](https://img.shields.io/badge/raco_pkg_install-asi64-aa00ff.svg)](http:pkgs.racket-lang.org/#[asi64])
+[![raco pkg install asi64](https://img.shields.io/badge/raco_pkg_install-asi64-aa00ff.svg)](https://pkgs.racket-lang.org/package/asi64)
 [![Documentation](https://img.shields.io/badge/read-documentation-blue.svg)](http://pkg-build.racket-lang.org/doc/asi64@asi64/index.html)
 ![MIT License](https://img.shields.io/badge/license-MIT-118811.svg)
 
