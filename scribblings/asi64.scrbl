@@ -128,13 +128,19 @@ Asi64 will warn you if it assembles over the top of a memory location it has pre
 
 @subsection{General}
 
-Labels in Asi64 must always start with @tt{:}
+Labels in asi64 must always start with @tt{:}
 
-When using a label as a target, omit the leading @tt{:} and suffix with @tt{:} @tt{@literal|{+}|} or @tt{@literal|{-}|}.  The latter two will look ahead or behind the current memory location and use the first label that is found with the given name.  This allows you to have many labels with the same name.
+When using a label as a target, drop the leading @tt{:} and suffix with one of the following.
+
+@itemlist[
+@item{: search for a uniquely named label in the program, warning if more than one is found}
+@item{+ search for a label after this memory location}
+@item{- search for a label before this memory location}
+]
+
+The latter two options allow you to have many labels with the same name.
 
 The assembler will uniquely number any labels with the same name before passing them to the emulator, to ensure they always appear in the disassembly.
-
-If instead you suffix the label target with @tt{:}, the assembler will warn if more than one label exists with that name.
 
 Labels can appear in most places, including before raw data and operands.
 
@@ -180,7 +186,7 @@ code:blank
 
 @subsection{Loading Label Locations}
 
-A common assembler feature is to load a label location as an immediate value, for setting interrupt routines, self modifiyng code and the like. You can extract the low and high bytes from a label using @tt{@literal|{<}|} and @tt{@literal|{>}|} as you can in most assemblers.
+A common assembler feature is to load a label location as an immediate value, for setting interrupt routines, and self modifiyng code. You can extract the low and high bytes from a label using @tt{@literal|{<}|} and @tt{@literal|{>}|} as you can in most assemblers.
 
 @#reader scribble/comment-reader
 (racketblock
@@ -194,7 +200,7 @@ A common assembler feature is to load a label location as an immediate value, fo
 code:blank    
 })
 
-Finally, a macro @tt{label-loc} will return the 16bit value of the label directly (following the suffix rules) so that you can use it as part of an expression. For example
+Finally, a macro @tt{label-loc} will return the 16bit value of the label directly (following the suffix rules) so that you can use it as part of an expression. 
 
 @#reader scribble/comment-reader
 (racketblock
@@ -223,7 +229,8 @@ code:blank
 
 @section[#:tag "racket integration"]{Racket Integration}
 
-Even inside { } blocks, you still have all of Racket. As long as the code ends up being something the assembler expects, you can write whatever you like.  You can also write functions that return ('inline') 6502 blocks in the manner you would expect.
+Even inside { } 6502 blocks, you still have all of Racket. As long as the program ends up outputting 6502 blocks, or lists of them, you can write whatever you like. Anything that is not a 6502 block will simply be ignored when assembling.  
+
 @#reader scribble/comment-reader
 (racketblock
 
@@ -280,13 +287,13 @@ code:blank
 })
 )
 
-The macro also introduces a few values for you to use that give metadata about the parameters. Currently you can use
+The macro also introduces a few values for the programmer to use that provide metadata about the parameters. Currently you can use
 @itemlist[
  @item{param-name-16bit? True if the operand is a 16 bit immediate value or 16-bit memory address}
 @item{param-name-immediate? True if the parameter is immediate.}
 ]
 
-These let you do some cool things such as writing general operations that are intelligent about their operands. Example:
+These let you write general operations that are intelligent about their operands.
 @#reader scribble/comment-reader
 (racketblock
 { 
@@ -316,13 +323,13 @@ code:blank
 
 This example could be better, it doesn't deal with 8 bit to 16 bit memory locations.
 
-You might notice some other handy functions being used here - @tt{(lo-byte)} @tt{(high-byte)} and @tt{(here)}. The latter will yield the current instruction location and is handy for infinte loops, skipping instructions and self-modifing code, without having to use labels.
+A few other handy functions are being used here - @tt{(lo-byte)} @tt{(high-byte)} and @tt{(here)}. The latter will yield the current instruction location and is handy for infinte loops, skipping instructions and self-modifing code, without having to use labels.
 
 Pseudo-ops can sometimes be nested in each other. (working on this!)
 
 @section{Data}
 
-To insert blocks of arbitrary binary data, use the @tt{(data ...)} macro.   It accepts any number of arguments which it will write directly as bytes.  If an argument is a Racket @racket[list], it will be recusrively unwrapped and its ultimate contents written to memory.
+Inserting blocks of arbitrary binary data is accomplished with the @tt{(data ...)} macro.  It accepts any number of bytes and writes then directly.  If an argument is a Racket @racket[list], it will be recusrively unwrapped and its ultimate contents written to memory.
 
 @racketblock[
 {
@@ -341,7 +348,7 @@ code:blank
 
 Asi64 knows about the 6502 instruction set and is able to tell you useful information about your code, such as how many cycles each instruction takes, which processor flags they might affect, and how much space the block occupies.
 
-Simply wrap any code you are interestied in seeing metrics about between @tt{?=} and @tt{=?}. When you assemble, everything will proceed as normal, but you will also see the information about your code blocks in the output window.
+Simply wrap any code you are interested in seeing metrics about between @tt{?=} and @tt{=?}. When you assemble you will also see the information about your code blocks in the output window.  This doesn't affect the program that is produced in any way.
 
 @#reader scribble/comment-reader
 (racketblock
@@ -366,7 +373,6 @@ code:blank
  
 this produces :
 
-
 @codeblock{
 diagnostics started at $30ec
 opcode a-mode cycles flags
@@ -390,7 +396,7 @@ Note that since you can put numbers and data anywhere, asi64 can only show you i
 
 @section{Metaprogramming Helpers}
 
-When you want to write code that writes other code, asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require. For example :
+When you want to write code that writes other code, asi64 has a macro that helps you load the correct value for the combination of opcode and addressing mode you require.
 
 @#reader scribble/comment-reader
 (racketblock
@@ -430,7 +436,8 @@ An instance of this struct @tt{emu} is exposed and the programmer can set the fi
 
 It can be useful to prevent the emulator executing after every assemble when working on long pieces of code or using the diagnostics facility to cycle count.
 
-Note that the @tt{program} field is not strictly associated with the emulator.  It is included here since it seems unlikely you would want to use asi64 without an emulator.  In the future, if asi64 is expanded to support other emulators, machines and same-family chips (NES, GameBoy, SNES ... ) this minimal design will likely change to something slightly more abstract.
+Note that the @tt{program} field is not strictly associated with the emulator.  It is included here since it seems unlikely you would want to use asi64 without an emulator.  In the future, if asi64 is expanded to support other emulators, machines and same-family chips (NES, Lynx, SNES, Apple][+  ... ) this minimal design will likely change to something slightly more abstract.
+
 
 An additional convenience function is provided that sets all the fields in one call.
 
@@ -446,5 +453,9 @@ An additional convenience function is provided that sets all the fields in one c
 
 
 @section{Interesting Examples}
+
+Coming Soon!
+
+@section{C64 Helpers}
 
 Coming Soon!
