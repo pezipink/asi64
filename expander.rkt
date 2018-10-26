@@ -10,6 +10,8 @@
                      racket/syntax
                      racket/list))
 
+(require threading
+         syntax/parse/define)
 (define is-debug #f)
 
 (struct metrics (min-cycles max-cycles code-size) #:mutable)
@@ -77,21 +79,36 @@
           cycles
           page-penalty?
           transition-type] ...))
-     #'(make-hash
-        (list
-         (cons
-          (cons opcode addressing-mode)
-          (metadata
-           opcode
-           addressing-mode
+     #'(values
+        (make-hash
+         (list
+          (cons
+           (cons opcode addressing-mode)
+           (metadata
+            opcode
+            addressing-mode
+            value
+            size
+            (list flag ...)
+            cycles
+            page-penalty?
+            transition-type)) ...))
+        (make-hash
+         (list
+          (cons
            value
-           size
-           (list flag ...)
-           cycles
-           page-penalty?
-           transition-type)) ...))]))
+           (metadata
+            opcode
+            addressing-mode
+            value
+            size
+            (list flag ...)
+            cycles
+            page-penalty?
+            transition-type)) ...)))
+        ]))
 
-(define opcode-metadata
+(define-values (opcode-metadata opcode-raw-metadata)
   (create-opcode-metadata
    (['ora 'zpxi #x01 2 ('Z 'N) 6 #f 'none] 
     ['ora 'zp   #x05 2 ('Z 'N) 3 #f 'none] 
@@ -250,15 +267,16 @@
     ['cpx 'abs  #xEC 3 ('C 'Z 'N) 4 #f 'none] 
 
     ;JMP / JSR
-    ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
-    ['jmp 'abs  #x4C 3 () 3 #f 'jump]
-    ['jsr 'abs  #x20 3 () 6 #f 'none]
-
     ; these two are not really "zero page"
     ; we just write them out as 16 bit addresses
     ; like the normal jumps
     ['jmp 'zp   #x4C 3 () 3 #f 'jump]
     ['jsr 'abs  #x20 3 () 6 #f 'none]
+
+    ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
+    ['jmp 'abs  #x4C 3 () 3 #f 'jump]
+    ['jsr 'abs  #x20 3 () 6 #f 'none]
+
     
     ;Branches
     ;these are actually "relative" addressing mode,
@@ -299,6 +317,8 @@
     ['tsx 'none #xBA 1 ()      2 #f 'none]
     ['dex 'none #xCA 1 ('Z 'N) 2 #f 'none]
     ['nop 'none #xEA 1 ()      2 #f 'none])))
+
+
 
 
 (define (to-bytes input)
@@ -760,12 +780,21 @@
                       (values (sort input >) <))])
       (match input
         [(list-rest a _) #:when (f a location) a]
-        [(list-rest a tail) (aux tail)])))
+        [(list-rest a tail) (aux tail)]
+        [(list) (error (format "no relative label named ~a was found looking in direction ~a" key relative))])))
+  
   (let ([labels (hash-ref (context-jump-table prog) key)])
-    (wdb "searching labels ~A for ~a from ~a ~a" labels key location relative)
-    (if (= 1 (length labels))
-        (car labels)
-        (aux labels))))
+    (wdb "searching labels ~A for ~a from ~a ~a\n" labels key location relative)
+    (cond
+      [(and (= (length labels) 1) (equal? relative #f)) (car labels)]
+      [(equal? relative #f)  
+         (error (format "more than one label named ~a was found" key))]
+      [else (aux labels)])
+     
+    ;; (if (= 1 (length labels))
+    ;;     (car labels)
+    ;;     (aux labels))
+    ))
 
 (define-syntax (if-immediate stx)
   (syntax-parse stx
@@ -896,5 +925,4 @@
                    (close-output-port out))
                  (execute-vice))))]))
   
-
 (provide (all-defined-out))
