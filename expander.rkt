@@ -10,8 +10,7 @@
                      racket/syntax
                      racket/list))
 
-(require threading
-         syntax/parse/define)
+(require syntax/parse/define)
 (define is-debug #f)
 
 (struct metrics (min-cycles max-cycles code-size) #:mutable)
