@@ -16,7 +16,7 @@ The overall philosophy of this project is to take an old idea (a 6502 macro asse
 
 Since Racket embraces this manner of design, it is quite easy to change, extend, or even build new languages over the top of it.
 
-The assembler is primarily aimed at programming the Commodore 64, and includes support for the emulator @hyperlink["http://vice-emu.sourceforge.net/"]{VICE}. It is able to launch the emulator post-compilation, passing along both your breakpoints and labels, resulting in a fast development cycle.
+The assembler is primarily aimed at programming the Commodore 64, and includes support for the emulator @hyperlink["http://vice-emu.sourceforge.net/"]{VICE}. It is able to launch the emulator post-compilation, passing along both your breakpoints and labels, resulting in a fast development cycle.  The full instruction set is supported, including the illegal opcodes.
 
 An assembler is a powerful low-level tool. An overall choice was made to expose all (or almost all) of the internals of the assembler to the programmer.  The special assembler syntax provided is, afterall, simply a wrapper around the underlying library, consisting of some macros, functions and read-table modifications.  The programmer is able to inspect and modify the assembler internals as they please. This can make it easier to write complex macros that directly program the internals without having to jump through hoops using the provided layers of syntax.
 

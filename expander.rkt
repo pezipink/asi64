@@ -267,11 +267,12 @@
     ['cpx 'abs  #xEC 3 ('C 'Z 'N) 4 #f 'none] 
 
     ;JMP / JSR
-    ; these two are not really "zero page"
+    ; these three are not really "zero page"
     ; we just write them out as 16 bit addresses
     ; like the normal jumps
     ['jmp 'zp   #x4C 3 () 3 #f 'jump]
-    ['jsr 'abs  #x20 3 () 6 #f 'none]
+    ['jsr 'zp  #x20 3 () 6 #f 'none]
+
 
     ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
     ['jmp 'abs  #x4C 3 () 3 #f 'jump]
@@ -316,9 +317,111 @@
     ['tax 'none #xAA 1 ('Z 'N) 2 #f 'none]
     ['tsx 'none #xBA 1 ()      2 #f 'none]
     ['dex 'none #xCA 1 ('Z 'N) 2 #f 'none]
-    ['nop 'none #xEA 1 ()      2 #f 'none])))
+    ['nop 'none #xEA 1 ()      2 #f 'none]
 
 
+    ;illegal opcodes
+
+    ;SLO
+    ['slo 'zpxi #x3 3 ('C 'Z 'N) 8 #f 'none]
+    ['slo 'zp   #x7 2 ('C 'Z 'N) 5 #f 'none]
+    ['slo 'abs  #xF 3 ('C 'Z 'N) 6 #f 'none]
+    ['slo 'zpyi #x13 3 ('C 'Z 'N) 8 #f 'none]
+    ['slo 'zpx  #x17 2 ('C 'Z 'N) 6 #f 'none]
+    ['slo 'asby #x1B 3 ('C 'Z 'N) 7 #f 'none]
+    ['slo 'absx #x1F 3 ('C 'Z 'N) 7 #f 'none]
+
+    ;ANC
+    ['anc 'i    #xB 2 ('C 'Z 'N) 2 #f 'none]
+    ['anc 'i    #x2B 2 ('C 'Z 'N) 2 #f 'none]
+
+    ;RLA
+    ['rla 'zpxi #x23 3 ('C 'Z 'N) 8 #f 'none]
+    ['rla 'zp   #x27 2 ('C 'Z 'N) 5 #f 'none]
+    ['rla 'abs  #x2F 3 ('C 'Z 'N) 6 #f 'none]
+    ['rla 'zpyi #x33 3 ('C 'Z 'N) 8 #f 'none]
+    ['rla 'zpx  #x37 2 ('C 'Z 'N) 6 #f 'none]
+    ['rla 'asby #x3B 3 ('C 'Z 'N) 7 #f 'none]
+    ['rla 'absx #x3F 3 ('C 'Z 'N) 7 #f 'none]
+
+    ;SRE
+    ['sre 'zpxi #x43 3 ('C 'Z 'N) 8 #f 'none]
+    ['sre 'zp   #x47 2 ('C 'Z 'N) 5 #f 'none]
+    ['sre 'abs  #x4F 3 ('C 'Z 'N) 6 #f 'none]
+    ['sre 'zpyi #x53 3 ('C 'Z 'N) 8 #f 'none]
+    ['sre 'zpx  #x57 2 ('C 'Z 'N) 6 #f 'none]
+    ['sre 'asby #x5B 3 ('C 'Z 'N) 7 #f 'none]
+    ['sre 'absx #x5F 3 ('C 'Z 'N) 7 #f 'none]
+
+    ;ALR
+    ['alr 'i    #x4B 2 ('C 'Z 'N) 2 #f 'none]
+
+    ;RRA
+    ['rra 'zpxi #x63 3 ('C 'V 'Z 'N) 8 #f 'none]
+    ['rra 'zp   #x67 2 ('C 'V 'Z 'N) 5 #f 'none]
+    ['rra 'abs  #x6F 3 ('C 'V 'Z 'N) 6 #f 'none]
+    ['rra 'zpyi #x73 3 ('C 'V 'Z 'N) 8 #f 'none]
+    ['rra 'zpx  #x77 2 ('C 'V 'Z 'N) 6 #f 'none]
+    ['rra 'asby #x7B 3 ('C 'V 'Z 'N) 7 #f 'none]
+    ['rra 'absx #x7F 3 ('C 'V 'Z 'N) 7 #f 'none]
+
+    ;ARR
+    ['arr 'i    #x6B 2 ('C 'V 'Z 'N) 2 #f 'none]
+
+    ;SAX
+    ['sax 'zpxi #x83 3 () 6 #f 'none]
+    ['sax 'zp   #x87 2 () 3 #f 'none]
+    ['sax 'abs  #x8F 3 () 4 #f 'none]
+    ['sax 'zpy  #x97 2 () 4 #f 'none]
+
+    ;XAA
+    ['xaa 'i    #x8B 2 ('Z 'N) 2 #f 'none]
+
+    ;AHX
+    ['ahx 'zpyi #x93 3 () 6 #f 'none]
+    ['ahx 'asby #x9F 3 () 5 #f 'none]
+
+    ;TAS
+    ['tas 'asby #x9B 3 () 5 #f 'none]
+
+    ;SHY
+    ['shy 'absx #x9C 3 () 5 #f 'none]
+
+    ;SHX
+    ['shx 'asby #x9E 3 () 5 #f 'none]
+
+    ;LAX
+    ['lax 'zpxi #xA3 3 ('Z 'N) 6 #f 'none]
+    ['lax 'zp   #xA7 2 ('Z 'N) 3 #f 'none]
+    ['lax 'i    #xAB 2 ('Z 'N) 2 #f 'none]
+    ['lax 'abs  #xAF 3 ('Z 'N) 4 #f 'none]
+    ['lax 'zpyi #xB3 3 ('Z 'N) 5 #t 'none]
+    ['lax 'zpy  #xB7 2 ('Z 'N) 4 #f 'none]
+    ['lax 'asby #xBF 3 ('Z 'N) 4 #t 'none]
+
+    ;LAS
+    ['las 'asby #xBB 3 ('Z 'N) 4 #t 'none]
+
+    ;DCP
+    ['dcp 'zpxi #xC3 3 ('C 'Z 'N) 8 #f 'none]
+    ['dcp 'zp   #xC7 2 ('C 'Z 'N) 5 #f 'none]
+    ['dcp 'abs  #xCF 3 ('C 'Z 'N) 6 #f 'none]
+    ['dcp 'zpyi #xD3 3 ('C 'Z 'N) 8 #f 'none]
+    ['dcp 'zpx  #xD7 2 ('C 'Z 'N) 6 #f 'none]
+    ['dcp 'asby #xDB 3 ('C 'Z 'N) 7 #f 'none]
+    ['dcp 'absx #xDF 3 ('C 'Z 'N) 7 #f 'none]
+
+    ;AXS
+    ['axs 'i    #xCB 2 ('C 'Z 'N) 2 #f 'none]
+
+    ;ISC
+    ['isc 'zpxi #xE3 3 ('C 'V 'Z 'N) 8 #f 'none]
+    ['isc 'zp   #xE7 2 ('C 'V 'Z 'N) 5 #f 'none]
+    ['isc 'abs  #xEF 3 ('C 'V 'Z 'N) 6 #f 'none]
+    ['isc 'zpyi #xF3 3 ('C 'V 'Z 'N) 8 #f 'none]
+    ['isc 'zpx  #xF7 2 ('C 'V 'Z 'N) 6 #f 'none]
+    ['isc 'asby #xFB 3 ('C 'V 'Z 'N) 7 #f 'none]
+    ['isc 'absx #xFF 3 ('C 'V 'Z 'N) 7 #f 'none])))
 
 
 (define (to-bytes input)
