@@ -269,6 +269,7 @@
     ; these three are not really "zero page"
     ; we just write them out as 16 bit addresses
     ; like the normal jumps
+    ['jmp 'jmpi #x6C 3 () 5 #f 'jump]
     ['jmp 'zp   #x4C 3 () 3 #f 'jump]
     ['jsr 'zp  #x20 3 () 6 #f 'none]
 
@@ -506,7 +507,7 @@
           ;indirect
           ([list #f #f #t 'x] 'zpxi)
           ([list #f #f #t 'y] 'zpyi)
-          ([list #t #f #t _ ] 'jmpi)))))
+          ([list _ #f #t _ ] 'jmpi)))))
 
 
 (struct context (data location minl maxl jump-table labels-waiting branches-waiting breakpoints) #:mutable #:transparent)
@@ -1022,8 +1023,8 @@
                       (for ([dest (reverse dests)]
                             [i (in-naturals)])
                         (if (eq? i 0)
-                            (write-string (format "al ~a .~a\n" (number->string dest 16) k) out)
-                            (write-string (format "al ~a .~a__~a\n" (number->string dest 16) k i) out))))))
+                            (write-string (string-replace (format "al ~a .~a\n" (number->string dest 16) k) "-" "_") out)
+                            (write-string (string-replace (format "al ~a .~a__~a\n" (number->string dest 16) k i) "-" "_") out))))))
                    (close-output-port out))
                  (execute-vice))))]))
   
