@@ -2,7 +2,7 @@
 
 (define collection "asi64")
 
-(define version "0.1.0")
+(define version "0.1")
 
 (define deps
   '("base"))
